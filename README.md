@@ -1,2 +1,2 @@
 # TCIA_Notebooks
-Notebooks for downloading images and metadata from TCIA Collections
+This is a home for notebooks which demonstrate how to access and work with TCIA datasets. 
