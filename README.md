@@ -3,7 +3,7 @@ This is a home for notebooks which demonstrate how to access and work with TCIA 
 
 # General Notebooks
 
-*  [TCIA_Linux_Data_Retriever_App.ipynb](https://github.com/kirbyju/TCIA_Notebooks/blob/main/TCIA_Linux_Data_Retriever_App.ipynb) - A tutorial on how to install and download TCIA datasets on Linux using the command-line Data Retriever utility
+*  [TCIA_Linux_Data_Retriever_App.ipynb](https://github.com/kirbyju/TCIA_Notebooks/blob/main/TCIA_Linux_Data_Retriever_App.ipynb) - A tutorial on how to install the [NBIA Data Retriever command-line Data Retriever utility on Linux](https://wiki.cancerimagingarchive.net/x/2QKPBQ) and use it to download TCIA datasets
 *  [TCIA_REST_API_Queries_for_Public_Datasets.ipynb](https://github.com/kirbyju/TCIA_Notebooks/blob/main/TCIA_REST_API_Queries_for_Public_Datasets.ipynb) - A Python tutorial on how to use TCIA's REST API to query public datasets (no user account required)
 *  [TCIA_Series_UID_Report.ipynb](https://github.com/kirbyju/TCIA_Notebooks/blob/main/TCIA_Series_UID_Report.ipynb) - Ingests a TCIA manifest file and creates reports about what it contains
 
