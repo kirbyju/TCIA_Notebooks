@@ -1,0 +1,5 @@
+# Ignore the local directory used to cache the downloaded data
+dicomData
+
+# Ignore the temp files created by jupyter
+.ipynb_checkpoints
