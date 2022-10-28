@@ -9,4 +9,4 @@ This is a home for notebooks which demonstrate how to access and work with TCIA 
 *  [TCIA_Series_UID_Report.ipynb](https://github.com/kirbyju/TCIA_Notebooks/blob/main/TCIA_Series_UID_Report.ipynb) - Ingests a TCIA manifest file and creates reports about what it contains
 
 # Collection-specific Notebooks
-*  [ACNS0332.ipynb](https://github.com/kirbyju/TCIA_Notebooks/blob/main/ACNS0332/ACNS0332.ipynb) - A tutorial on accessing DICOM images, clinical data, and tumor annotations (3d segmentations & seed points) from the "Chemotherapy and Radiation Therapy in Treating Young Patients With Newly Diagnosed, Previously Untreated, High-Risk Medulloblastoma/PNET (ACNS0332)" Collection dataset hosted on TCIA
+*  [ACNS0332.ipynb](https://github.com/kirbyju/TCIA_Notebooks/blob/main/ACNS0332/ACNS0332.ipynb) - A tutorial on accessing DICOM images, clinical data, and tumor annotations (3d segmentations & seed points) from the ["Annotations for Chemotherapy and Radiation Therapy in Treating Young Patients With Newly Diagnosed, Previously Untreated, High-Risk Medulloblastoma/PNET (ACNS0332)"](https://doi.org/10.7937/D8A8-6252) dataset hosted on TCIA
