@@ -2,6 +2,7 @@
 import requests
 import pandas as pd
 import json
+import getpass
 import zipfile
 from io import BytesIO
 
@@ -41,7 +42,7 @@ def getToken(api_url = ""):
         else:
             # create regular token
             url = token_url + userName + "&password=" + passWord + "&grant_type=password&client_id=nbiaRestAPIClient&client_secret=ItsBetweenUAndMe"
-            access_token = requests.get(token_url).json()["access_token"]
+            access_token = requests.get(url).json()["access_token"]
             print ('API Token created successfully: ', access_token)
 
         # set API call headers to use the access token we created
@@ -63,11 +64,9 @@ def makeCredentialFile():
     print("Enter User: ")
     userName = input()
     passWord = getpass.getpass(prompt = 'Enter Password: ')
-    print("Specify credential file name: ")
-    cred_file = input()
 
     # create credential file to use with NBIA Data Retriever  
     lines = ['userName=' + userName, 'passWord=' + passWord]
-    with open(cred_file, 'w') as f:
+    with open('credentials.txt', 'w') as f:
         f.write('\n'.join(lines))
-    print("Credential file for NBIA Data Retriever saved as", cred_file)
+    print("Credential file for NBIA Data Retriever saved: credentials.txt")
