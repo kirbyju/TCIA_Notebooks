@@ -648,9 +648,9 @@ def downloadSeries(series_data, api_url = "", input_type = "", csv_filename=""):
         if csv_filename != "":
             manifestDF.to_csv(csv_filename + '.csv')
             print("Manifest CSV saved as", csv_filename + '.csv')
-            display(manifestDF)
+            return manifestDF
         else:
-            display(manifestDF)
+            return manifestDF
 
     except requests.exceptions.HTTPError as errh:
         print(errh)
@@ -661,3 +661,55 @@ def downloadSeries(series_data, api_url = "", input_type = "", csv_filename=""):
     except requests.exceptions.RequestException as err:
         print(err)
         
+##########################
+##########################
+# Advanced API Endpoints
+
+####### getModalityCounts function (Advanced)
+# Get counts of Modality metadata from Advanced API
+# Allows filtering by collection and bodyPart
+# Returns result as JSON
+
+def getModalityCounts(collection = "", 
+              bodyPart = "",
+              api_url = ""):
+
+    # read api_call_headers from global variable
+    global api_call_headers, nlst_api_call_headers
+    
+    # create options dict to construct URL
+    options = {}
+
+    if collection:
+        options['Collection'] = collection
+    if bodyPart:
+        options['BodyPartExamined'] = bodyPart
+
+    try:
+        # set base URL
+        if api_url == "advanced" or api_url == "":
+            base_url = setApiUrl("advanced")
+        elif api_url == "nlst-advanced" or api_url == "nlst":
+            base_url = setApiUrl("nlst-advanced")
+        else:
+            print("Invalid api_url selection. Valid options are 'advanced' (or blank) and 'nlst-advanced' (or 'nlst'). Defaulting to 'advanced' API.")
+            base_url = setApiUrl("advanced")
+        data_url = base_url + 'getModalityValuesAndCounts'
+        print('Calling... ', data_url, 'with parameters', options)
+        if api_url == "nlst-advanced" or api_url == "nlst":
+            data = requests.get(data_url, headers = nlst_api_call_headers, params = options)
+        else:
+            data = requests.get(data_url, headers = api_call_headers, params = options)
+        if data.text != "":
+            return data.json()
+        else:
+            print("No results found.")
+
+    except requests.exceptions.HTTPError as errh:
+        print(errh)
+    except requests.exceptions.ConnectionError as errc:
+        print(errc)
+    except requests.exceptions.Timeout as errt:
+        print(errt)
+    except requests.exceptions.RequestException as err:
+        print(err)
