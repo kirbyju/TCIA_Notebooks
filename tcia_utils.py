@@ -698,7 +698,7 @@ def getModalityCounts(collection = "",
             data = requests.get(data_url, headers = nlst_api_call_headers, params = options)
         else:
             data = requests.get(data_url, headers = api_call_headers, params = options)
-        if data.text != "":
+        if data.text != "[]":
             return data.json()
         else:
             print("No results found.")
