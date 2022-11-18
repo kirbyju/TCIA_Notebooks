@@ -760,3 +760,31 @@ def getBodyPartCounts(collection = "",
         print(errt)
     except requests.exceptions.RequestException as err:
         print(err)
+        
+####### makeSeriesReport function
+# Ingests the output of getSeries() and creates summary report
+
+def makeSeriesReport(getSeries_data):
+
+    df = pd.DataFrame(getSeries_data)
+
+    # Calculate summary statistics for a given collection 
+
+    # Summarize patients
+    print('Summary Statistics\n')
+    print('Subjects: ', len(df['PatientID'].value_counts()), 'subjects')
+    print('Subjects: ', len(df['StudyInstanceUID'].value_counts()), 'studies')
+    print('Subjects: ', len(df['SeriesInstanceUID'].value_counts()), 'series')
+    print('Images: ', df['ImageCount'].sum(), 'images\n')
+
+    # Summarize modalities
+    print("Series Counts - Modality:")
+    print(df['Modality'].value_counts(dropna=False),'\n')
+
+    # Summarize body parts
+    print("Series Counts - Body Parts Examined:")
+    print(df['BodyPartExamined'].value_counts(dropna=False),'\n')
+
+    # Summarize manufacturers
+    print("Series Counts - Device Manufacturers:")
+    print(df['Manufacturer'].value_counts(dropna=False))
