@@ -572,8 +572,7 @@ def downloadSampleSeries(series_data, api_url = "", input_type = "", csv_filenam
             # print(file.namelist())
             file.extractall(path = "tciaDownload/" + "/" + seriesUID)
             # write the series metadata to a dataframe            
-            df = pd.DataFrame(metadata)
-            manifestDF = pd.concat([manifestDF, df])
+            manifestDF = pd.concat([manifestDF, pd.DataFrame(metadata)], ignore_index=True)
             # Repeat n times for demo purposes
             count += 1;
             if count == 3:
@@ -640,8 +639,7 @@ def downloadSeries(series_data, api_url = "", input_type = "", csv_filename=""):
             # print(file.namelist())
             file.extractall(path = "tciaDownload/" + "/" + seriesUID)
             # write the series metadata to a dataframe            
-            df = pd.DataFrame(metadata)
-            manifestDF = pd.concat([manifestDF, df])
+            manifestDF = pd.concat([manifestDF, pd.DataFrame(metadata)], ignore_index=True)
         print("Download Complete:", len(series_data), "Series Instance UIDs (scans).")
         
         # display manifest dataframe and/or save manifest to CSV file
