@@ -90,8 +90,7 @@ def getToken(api_url = ""):
             current_time = datetime.now()
             nlst_token_exp_time = current_time + timedelta(hours=2)
             nlst_api_call_headers = {'Authorization': 'Bearer ' + access_token}
-            print ('Success - Token saved to nlst_api_call_headers variable: ', nlst_api_call_headers)
-            print('Token expires at', nlst_token_exp_time)
+            print ('Success - Token saved to nlst_api_call_headers variable and expires at', nlst_token_exp_time)
         else:
             # create regular token
             url = token_url + userName + "&password=" + passWord + "&grant_type=password&client_id=nbiaRestAPIClient&client_secret=ItsBetweenUAndMe"
@@ -100,8 +99,7 @@ def getToken(api_url = ""):
             current_time = datetime.now()
             token_exp_time = current_time + timedelta(hours=2)
             api_call_headers = {'Authorization': 'Bearer ' + access_token}
-            print ('Success - Token saved to api_call_headers variable: ', api_call_headers)
-            print('Token expires at', token_exp_time)
+            print ('Success - Token saved to api_call_headers variable and expires at', token_exp_time)
 
     except requests.exceptions.HTTPError as errh:
         print(errh)
