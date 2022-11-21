@@ -786,3 +786,22 @@ def makeSeriesReport(getSeries_data):
     # Summarize manufacturers
     print("Series Counts - Device Manufacturers:")
     print(df['Manufacturer'].value_counts(dropna=False))
+
+####### manifestToList function
+# Ingests a TCIA manifest file and removes header
+# Returns a list of series UIDs 
+
+def manifestToList(manifest):
+
+    # initialize variable
+    data = []
+
+    # open file and write lines to a list
+    with open(manifest) as f:
+        for line in f:
+            data.append(line.rstrip())
+
+    # remove the parameters from the list
+    del data[:6]
+    print("Result contains", len(data), "Series Instance UIDs (scans).")
+    return data
