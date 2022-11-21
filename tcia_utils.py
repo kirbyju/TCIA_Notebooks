@@ -4,7 +4,7 @@ import pandas as pd
 import getpass
 import json
 import zipfile
-from io import BytesIO
+import io
 from datetime import datetime
 from datetime import timedelta
 
@@ -842,7 +842,7 @@ def manifestToList(manifest):
         first_line = f.readline()
         f.seek(0, 0)
         if "downloadServerUrl" in first_line:
-            print("Removing headers from TCIA mainfest.")
+            print("Ignoring headers from TCIA mainfest.")
             # write lines to list
             for line in f:
                 data.append(line.rstrip())
