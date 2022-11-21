@@ -759,6 +759,46 @@ def getBodyPartCounts(collection = "",
     except requests.exceptions.RequestException as err:
         print(err)
         
+####### getSeriesList function (Advanced)
+# Get series metadata from Advanced API
+# Allows submission of a list of UIDs
+# Returns result as JSON
+
+def getSeriesList(list, api_url = ""):
+    
+    # read api_call_headers from global variable
+    global api_call_headers, nlst_api_call_headers
+
+    param = {'list': list}
+
+    try:
+        # set base_url 
+        if api_url == "nlst":
+            base_url = setApiUrl("nlst")
+        else:
+            base_url = setApiUrl("advanced")
+        data_url = base_url + "getSeriesMetadata2"
+        data = requests.post(data_url, headers = api_call_headers, data = param)
+        print('Calling... ', data_url)
+        # save output
+        df = pd.read_csv(io.StringIO(data.text), sep=',')
+        df.to_csv('scan_metadata.csv')
+        print("scan_metadata.csv report saved successfully")
+        return df
+
+    except requests.exceptions.HTTPError as errh:
+        print(errh)
+    except requests.exceptions.ConnectionError as errc:
+        print(errc)
+    except requests.exceptions.Timeout as errt:
+        print(errt)
+    except requests.exceptions.RequestException as err:
+        print(err)
+        
+##########################
+##########################
+# Miscellaneous
+
 ####### makeSeriesReport function
 # Ingests the output of getSeries() and creates summary report
 
