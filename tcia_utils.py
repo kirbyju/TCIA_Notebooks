@@ -769,19 +769,23 @@ def getSeriesList(list, api_url = ""):
     # read api_call_headers from global variable
     global api_call_headers, nlst_api_call_headers
 
-    param = {'list': list}
+    uids = ",".join(list)
+    param = {'list': uids}
 
     try:
         # set base_url 
         if api_url == "nlst":
-            base_url = setApiUrl("nlst")
+            base_url = setApiUrl("nlst-advanced")
         else:
             base_url = setApiUrl("advanced")
         data_url = base_url + "getSeriesMetadata2"
-        data = requests.post(data_url, headers = api_call_headers, data = param)
         print('Calling... ', data_url)
+        if api_url == "nlst":
+            data = requests.get(data_url, headers = nlst_api_call_headers, data = param)
+        else:
+            metadata = requests.post(data_url, headers = api_call_headers, data = param)
         # save output
-        df = pd.read_csv(io.StringIO(data.text), sep=',')
+        df = pd.read_csv(io.StringIO(metadata.text), sep=',')
         df.to_csv('scan_metadata.csv')
         print("scan_metadata.csv report saved successfully")
         return df
