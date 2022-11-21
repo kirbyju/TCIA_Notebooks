@@ -547,7 +547,7 @@ def downloadSampleSeries(series_data, api_url = "", input_type = "", csv_filenam
         base_url = setApiUrl()
         print("Invalid api_url selection. Try 'nlst' or 'restricted' for special use cases.\nDefaulting to open-access APIs from", base_url)
 
-    print("Downloading first 3 scans out of", len(series_data), "Series Instance UIDs (scans).")
+    print("Downloading first 3 out of", len(series_data), "Series Instance UIDs (scans).")
 
     try:
         for x in series_data:
@@ -798,10 +798,21 @@ def manifestToList(manifest):
 
     # open file and write lines to a list
     with open(manifest) as f:
-        for line in f:
-            data.append(line.rstrip())
-
-    # remove the parameters from the list
-    del data[:6]
-    print("Result contains", len(data), "Series Instance UIDs (scans).")
-    return data
+        # verify this is a tcia manifest file
+        first_line = f.readline()
+        f.seek(0, 0)
+        if "downloadServerUrl" in first_line:
+            print("Removing headers from TCIA mainfest.")
+            # write lines to list
+            for line in f:
+                data.append(line.rstrip())
+            # remove the parameters from the list
+            del data[:6]
+            print("Returning", len(data), "Series Instance UIDs (scans) as a list.")
+            return data
+        else:
+            print("This is not a TCIA manifest file, or you've already removed the header lines.")
+            for line in f:
+                data.append(line.rstrip())
+            print("Returning", len(data), "Series Instance UIDs (scans) as a list.")
+            return data
