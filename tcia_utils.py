@@ -605,7 +605,7 @@ def downloadSampleSeries(series_data, api_url = "", input_type = "", csv_filenam
             else:
                 data = requests.get(data_url)
                 metadata = requests.get(metadata_url).json()
-            file = zipfile.ZipFile(BytesIO(data.content))
+            file = zipfile.ZipFile(io.BytesIO(data.content))
             # print(file.namelist())
             file.extractall(path = "tciaDownload/" + "/" + seriesUID)
             # write the series metadata to a dataframe            
@@ -672,7 +672,7 @@ def downloadSeries(series_data, api_url = "", input_type = "", csv_filename=""):
             else:
                 data = requests.get(data_url)
                 metadata = requests.get(metadata_url).json()
-            file = zipfile.ZipFile(BytesIO(data.content))
+            file = zipfile.ZipFile(io.BytesIO(data.content))
             # print(file.namelist())
             file.extractall(path = "tciaDownload/" + "/" + seriesUID)
             # write the series metadata to a dataframe            
