@@ -405,7 +405,7 @@ def getStudy(collection,
 # Allows filtering by collection
 # Returns result as JSON
 
-def getSeries(collection, 
+def getSeries(collection = "", 
               patientId = "", 
               studyUid = "", 
               seriesUid = "", 
@@ -857,6 +857,10 @@ def makeSeriesReport(getSeries_data):
     print('Subjects: ', len(df['StudyInstanceUID'].value_counts()), 'studies')
     print('Subjects: ', len(df['SeriesInstanceUID'].value_counts()), 'series')
     print('Images: ', df['ImageCount'].sum(), 'images\n')
+    
+    # Summarize Collections
+    print("Series Counts - Collections:")
+    print(df['Collection'].value_counts(dropna=False))
 
     # Summarize modalities
     print("Series Counts - Modality:")
