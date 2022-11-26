@@ -1,5 +1,13 @@
 # Ignore the local directory used to cache the downloaded data
 dicomData
+tciaDownload
+models
+monai_results
 
 # Ignore the temp files created by jupyter
 .ipynb_checkpoints
+__pycache__
+
+# Editor files
+*~
+*.swp
