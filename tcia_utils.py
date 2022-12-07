@@ -927,8 +927,8 @@ def makeVizLinks(series_data, csv_filename=""):
 
     # display manifest dataframe and/or save manifest to CSV file
     if csv_filename != "":
-        manifestDF.to_csv(csv_filename + '.csv')
+        df.to_csv(csv_filename + '.csv')
         print("Manifest CSV saved as", csv_filename + '.csv')
-        return manifestDF
+        return df
     else:
-        return manifestDF
+        return df
