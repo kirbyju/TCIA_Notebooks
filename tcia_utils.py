@@ -843,7 +843,7 @@ def getSeriesList(list, api_url = ""):
 # Miscellaneous
 
 ####### makeSeriesReport function
-# Ingests the output of getSeries() and creates summary report
+# Ingests the output of getSeries() or getSharedCart and creates summary report
 
 def makeSeriesReport(getSeries_data):
 
@@ -903,3 +903,32 @@ def manifestToList(manifest):
                 data.append(line.rstrip())
             print("Returning", len(data), "Series Instance UIDs (scans) as a list.")
             return data
+
+####### makeVizLinks function
+# Ingests the output of getSeries() or getSharedCart()  
+# Creates URLs to visualize them in a browser
+# The links appear in the last 2 columns of the dataframe
+# TCIA links display the individual series described in each row
+# IDC links display the entire study (all scans from that time point)
+# IDC links may not work if they haven't mirrored the series from TCIA yet
+# This function only works with fully public datasets (no limited-access data)
+# Optionally accepts a csv_filename parameter if you'd like to export a CSV file
+
+def makeVizLinks(series_data, csv_filename=""):
+
+    # set base urls for tcia/idc
+    tciaVizUrl = "https://nbia.cancerimagingarchive.net/viewer/?series="
+    idcVizUrl = "https://viewer.imaging.datacommons.cancer.gov/viewer/"
+    
+    # create dataframe and append base URLs to study/series UIDs
+    df = pd.DataFrame(series_data)
+    df['VisualizeSeriesOnTcia'] = tciaVizUrl + df['SeriesInstanceUID']
+    df['VisualizeStudyOnIdc'] = idcVizUrl + df['StudyInstanceUID']
+
+    # display manifest dataframe and/or save manifest to CSV file
+    if csv_filename != "":
+        manifestDF.to_csv(csv_filename + '.csv')
+        print("Manifest CSV saved as", csv_filename + '.csv')
+        return manifestDF
+    else:
+        return manifestDF
