@@ -40,6 +40,14 @@ def setApiUrl(api_url = ""):
         else:
             print("Your security token for accessing the Restricted API is expired or does not exist. Create one using getToken().")
             raise StopExecution
+    elif api_url == "nlst-restricted":
+        # Restricted-access API (login required): https://wiki.cancerimagingarchive.net/x/X4ATBg
+        if datetime.now() < nlst_token_exp_time:
+            base_url = "https://services.cancerimagingarchive.net/nlst-api/services/v2/"
+            return base_url
+        else:
+            print("Your security token for accessing the NLST Advanced API is expired or does not exist. Create one using getToken(\"nlst\").")
+            raise StopExecution
     elif api_url == "advanced":
         # Advanced API (login required): https://wiki.cancerimagingarchive.net/x/YoATBg
         if datetime.now() < token_exp_time:
@@ -48,16 +56,14 @@ def setApiUrl(api_url = ""):
         else:
             print("Your security token for accessing the Advanced API is expired or does not exist. Create one using getToken().")
             raise StopExecution
-        # print("Using Advanced APIs from", base_url)
     elif api_url == "nlst-advanced":
         # Advanced API docs (login required): https://wiki.cancerimagingarchive.net/x/YoATBg
         if datetime.now() < nlst_token_exp_time:
             base_url = "https://services.cancerimagingarchive.net/nlst-api/services/"
             return base_url
         else:
-            print("Your security token for accessing the NLST Advanced API is expired or does not exist. Create one using getToken().")
+            print("Your security token for accessing the NLST Advanced API is expired or does not exist. Create one using getToken(\"nlst\").")
             raise StopExecution
-        # print("Using Advanced NLST APIs from", base_url)
     else:
         base_url = "https://services.cancerimagingarchive.net/nbia-api/services/v1/"
         print("Invalid api_url selection. Try 'nlst', 'restricted', 'advanced', and 'nlst-advanced' for special use cases.\nDefaulting to open-access APIs from", base_url)
