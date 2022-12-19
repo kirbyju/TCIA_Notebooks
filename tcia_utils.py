@@ -820,7 +820,7 @@ def getSeriesList(list, api_url = ""):
         data_url = base_url + "getSeriesMetadata2"
         print('Calling... ', data_url)
         if api_url == "nlst":
-            data = requests.get(data_url, headers = nlst_api_call_headers, data = param)
+            metadata = requests.get(data_url, headers = nlst_api_call_headers, data = param)
         else:
             metadata = requests.post(data_url, headers = api_call_headers, data = param)
         # save output
