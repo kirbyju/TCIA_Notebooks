@@ -807,9 +807,9 @@ def getBodyPartCounts(collection = "",
 ####### getSeriesList function (Advanced)
 # Get series metadata from Advanced API
 # Allows submission of a list of UIDs
-# Returns result as JSON
+# Returns result as dataframe and CSV
 
-def getSeriesList(list, api_url = ""):
+def getSeriesList(list, api_url = "", csv_filename = ""):
     
     # read api_call_headers from global variable
     global api_call_headers, nlst_api_call_headers
@@ -831,8 +831,12 @@ def getSeriesList(list, api_url = ""):
             metadata = requests.post(data_url, headers = api_call_headers, data = param)
         # save output
         df = pd.read_csv(io.StringIO(metadata.text), sep=',')
-        df.to_csv('scan_metadata.csv')
-        print("scan_metadata.csv report saved successfully")
+        if csv_filename != "":
+            df.to_csv(csv_filename + '.csv')
+            print("Report saved as", csv_filename + ".csv")
+        else:
+            df.to_csv('scan_metadata.csv')
+            print("Report saved as scan_metadata.csv")
         return df
 
     except requests.exceptions.HTTPError as errh:
