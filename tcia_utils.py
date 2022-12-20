@@ -586,6 +586,44 @@ def getManufacturer(collection = "",
     except requests.exceptions.RequestException as err:
         print(err)
         
+####### getSopInstanceUids function
+# Gets SOP Instance UIDs from a specific series/scan
+# Requires a specific Series Instance UID as input
+# Returns result as JSON
+
+def getSopInstanceUids(seriesUid, api_url = ""):
+
+    # read api_call_headers from global variable
+    global api_call_headers
+
+    try:
+        # set API URL function
+        if api_url == "" or api_url == "nlst":
+            base_url = setApiUrl(api_url)
+        elif api_url == "restricted":
+            base_url = setApiUrl(api_url)
+        else:
+            base_url = setApiUrl()
+            print("Invalid api_url selection. Try 'nlst' or 'restricted' for special use cases.\nDefaulting to open-access APIs from", base_url)
+        data_url = base_url + 'getSOPInstanceUIDs?SeriesInstanceUID=' + seriesUid
+        print('Calling... ', data_url)
+        if api_url == "restricted":
+            data = requests.get(data_url, headers = api_call_headers)
+        else:
+            data = requests.get(data_url)
+        if data.text != "":
+            return data.json()
+        else:
+            print("No results found.")
+    except requests.exceptions.HTTPError as errh:
+        print(errh)
+    except requests.exceptions.ConnectionError as errc:
+        print(errc)
+    except requests.exceptions.Timeout as errt:
+        print(errt)
+    except requests.exceptions.RequestException as err:
+        print(err)
+        
 ####### getSharedCart function
 # Gets "Shared Cart" (scan) metadata from a specified api_url
 # Allows filtering by collection
