@@ -5,6 +5,7 @@ import getpass
 import json
 import zipfile
 import io
+import os
 from datetime import datetime
 from datetime import timedelta
 
@@ -601,21 +602,26 @@ def downloadSampleSeries(series_data, api_url = "", input_type = "", csv_filenam
                 seriesUID = x
             else:
                 seriesUID = x['SeriesInstanceUID']
-    
-            data_url = base_url + 'getImage?NewFileNames=Yes&SeriesInstanceUID=' + seriesUID
-            metadata_url = base_url + "getSeriesMetaData?SeriesInstanceUID=" + seriesUID
-            print("Downloading... " + data_url)
-            if api_url == "restricted":
-                data = requests.get(data_url, headers = api_call_headers)
-                metadata = requests.get(metadata_url, headers = api_call_headers).json()
+            
+            path = "tciaDownload/" + seriesUID
+            if not os.path.isdir(path):
+                data_url = base_url + 'getImage?NewFileNames=Yes&SeriesInstanceUID=' + seriesUID
+                metadata_url = base_url + "getSeriesMetaData?SeriesInstanceUID=" + seriesUID
+                print("Downloading... " + data_url)
+                if api_url == "restricted":
+                    data = requests.get(data_url, headers = api_call_headers)
+                    metadata = requests.get(metadata_url, headers = api_call_headers).json()
+                else:
+                    data = requests.get(data_url)
+                    metadata = requests.get(metadata_url).json()
+                file = zipfile.ZipFile(io.BytesIO(data.content))
+                # print(file.namelist())
+                file.extractall(path = "tciaDownload/" + "/" + seriesUID)
+                # write the series metadata to a dataframe            
+                manifestDF = pd.concat([manifestDF, pd.DataFrame(metadata)], ignore_index=True)                
             else:
-                data = requests.get(data_url)
-                metadata = requests.get(metadata_url).json()
-            file = zipfile.ZipFile(io.BytesIO(data.content))
-            # print(file.namelist())
-            file.extractall(path = "tciaDownload/" + "/" + seriesUID)
-            # write the series metadata to a dataframe            
-            manifestDF = pd.concat([manifestDF, pd.DataFrame(metadata)], ignore_index=True)
+                print("Series", seriesUID, "already downloaded.")
+
             # Repeat n times for demo purposes
             count += 1;
             if count == 3:
@@ -669,20 +675,25 @@ def downloadSeries(series_data, api_url = "", input_type = "", csv_filename=""):
             else:
                 seriesUID = x['SeriesInstanceUID']
     
-            data_url = base_url + 'getImage?NewFileNames=Yes&SeriesInstanceUID=' + seriesUID
-            metadata_url = base_url + "getSeriesMetaData?SeriesInstanceUID=" + seriesUID
-            print("Downloading... " + data_url)
-            if api_url == "restricted":
-                data = requests.get(data_url, headers = api_call_headers)
-                metadata = requests.get(metadata_url, headers = api_call_headers).json()
+            path = "tciaDownload/" + seriesUID
+            if not os.path.isdir(path):
+                data_url = base_url + 'getImage?NewFileNames=Yes&SeriesInstanceUID=' + seriesUID
+                metadata_url = base_url + "getSeriesMetaData?SeriesInstanceUID=" + seriesUID
+                print("Downloading... " + data_url)
+                if api_url == "restricted":
+                    data = requests.get(data_url, headers = api_call_headers)
+                    metadata = requests.get(metadata_url, headers = api_call_headers).json()
+                else:
+                    data = requests.get(data_url)
+                    metadata = requests.get(metadata_url).json()
+                file = zipfile.ZipFile(io.BytesIO(data.content))
+                # print(file.namelist())
+                file.extractall(path = "tciaDownload/" + "/" + seriesUID)
+                # write the series metadata to a dataframe            
+                manifestDF = pd.concat([manifestDF, pd.DataFrame(metadata)], ignore_index=True)                
             else:
-                data = requests.get(data_url)
-                metadata = requests.get(metadata_url).json()
-            file = zipfile.ZipFile(io.BytesIO(data.content))
-            # print(file.namelist())
-            file.extractall(path = "tciaDownload/" + "/" + seriesUID)
-            # write the series metadata to a dataframe            
-            manifestDF = pd.concat([manifestDF, pd.DataFrame(metadata)], ignore_index=True)
+                print("Series", seriesUID, "already downloaded.")
+
         print("Download Complete:", len(series_data), "Series Instance UIDs (scans).")
         
         # display manifest dataframe and/or save manifest to CSV file
