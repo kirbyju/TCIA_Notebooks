@@ -409,7 +409,8 @@ def getStudy(collection,
         
 ####### getSeries function
 # Gets Series (scan) metadata from a specified api_url
-# Allows filtering by collection
+# Allows filtering by collection, patient ID, study UID,
+#   series UID, modality, body part, manufacturer & model
 # Returns result as JSON
 
 def getSeries(collection = "", 
@@ -514,6 +515,68 @@ def getSeriesMetadata(seriesUid, api_url = ""):
             return data.json()
         else:
             print("No results found.")
+    except requests.exceptions.HTTPError as errh:
+        print(errh)
+    except requests.exceptions.ConnectionError as errc:
+        print(errc)
+    except requests.exceptions.Timeout as errt:
+        print(errt)
+    except requests.exceptions.RequestException as err:
+        print(err)
+        
+####### getManufacturer function
+# Gets manufacturer metadata from a specified api_url
+# Allows filtering by collection, body part & modality
+# Returns result as JSON
+
+def getManufacturer(collection = "", 
+              modality = "", 
+              bodyPart = "", 
+              api_url = ""):
+
+    # read api_call_headers from global variable
+    global api_call_headers
+
+    # create options dict to construct URL
+    options = {}
+
+    if collection:
+        options['Collection'] = collection
+    if modality:
+        options['Modality'] = modality
+    if bodyPart:
+        options['BodyPartExamined'] = bodyPart
+
+    try:
+        # set API URL function
+        if api_url == "" or api_url == "nlst":
+            base_url = setApiUrl(api_url)
+            data_url = base_url + 'getManufacturerValues'
+            print('Calling... ', data_url, 'with parameters', options)
+            data = requests.get(data_url, params = options)
+            if data.text != "":
+                return data.json()
+            else:
+                print("No results found.")
+        elif api_url == "restricted":
+            base_url = setApiUrl(api_url)
+            data_url = base_url + 'getManufacturerValues'
+            print('Calling... ', data_url, 'with parameters', options)
+            data = requests.get(data_url, headers = api_call_headers, params = options)
+            if data.text != "":
+                return data.json()
+            else:
+                print("No results found.")
+        else:
+            base_url = setApiUrl()
+            print("Invalid api_url selection. Try 'nlst' or 'restricted' for special use cases.\nDefaulting to open-access APIs from", base_url)
+            data_url = base_url + 'getManufacturerValues'
+            print('Calling... ', data_url, 'with parameters', options)
+            data = requests.get(data_url, params = options)
+            if data.text != "":
+                return data.json()
+            else:
+                print("No results found.")
     except requests.exceptions.HTTPError as errh:
         print(errh)
     except requests.exceptions.ConnectionError as errc:
