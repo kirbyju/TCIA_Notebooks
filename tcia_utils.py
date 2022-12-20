@@ -683,8 +683,11 @@ def getSharedCart(name, api_url = ""):
 def downloadSampleSeries(series_data, api_url = "", input_type = "", csv_filename=""):
 
     global api_call_headers
-    manifestDF = pd.DataFrame()
+    manifestDF=pd.DataFrame()
     seriesUID = ''
+    success = 0
+    failed = 0
+    previous = 0
     count = 0
 
     # set API URL function
@@ -694,7 +697,7 @@ def downloadSampleSeries(series_data, api_url = "", input_type = "", csv_filenam
         base_url = setApiUrl()
         print("Invalid api_url selection. Try 'nlst' or 'restricted' for special use cases.\nDefaulting to open-access APIs from", base_url)
 
-    print("Downloading first 3 out of", len(series_data), "Series Instance UIDs (scans).")
+    print("Attempting to download", len(series_data), "Series Instance UIDs (scans).")
 
     try:
         for x in series_data:
@@ -703,7 +706,7 @@ def downloadSampleSeries(series_data, api_url = "", input_type = "", csv_filenam
                 seriesUID = x
             else:
                 seriesUID = x['SeriesInstanceUID']
-            
+    
             path = "tciaDownload/" + seriesUID
             if not os.path.isdir(path):
                 data_url = base_url + 'getImage?NewFileNames=Yes&SeriesInstanceUID=' + seriesUID
@@ -711,23 +714,43 @@ def downloadSampleSeries(series_data, api_url = "", input_type = "", csv_filenam
                 print("Downloading... " + data_url)
                 if api_url == "restricted":
                     data = requests.get(data_url, headers = api_call_headers)
-                    metadata = requests.get(metadata_url, headers = api_call_headers).json()
+                    if data.status_code == 200:
+                        metadata = requests.get(metadata_url, headers = api_call_headers).json()
+                        file = zipfile.ZipFile(io.BytesIO(data.content))
+                        # print(file.namelist())
+                        file.extractall(path = "tciaDownload/" + "/" + seriesUID)
+                        # write the series metadata to a dataframe            
+                        manifestDF = pd.concat([manifestDF, pd.DataFrame(metadata)], ignore_index=True)
+                        success += 1;
+                    else:
+                        print("Error:", data.status_code, "Series failed:", seriesUID)
+                        failed += 1;
                 else:
                     data = requests.get(data_url)
-                    metadata = requests.get(metadata_url).json()
-                file = zipfile.ZipFile(io.BytesIO(data.content))
-                # print(file.namelist())
-                file.extractall(path = "tciaDownload/" + "/" + seriesUID)
-                # write the series metadata to a dataframe            
-                manifestDF = pd.concat([manifestDF, pd.DataFrame(metadata)], ignore_index=True)                
+                    if data.status_code == 200:
+                        metadata = requests.get(metadata_url).json()
+                        file = zipfile.ZipFile(io.BytesIO(data.content))
+                        # print(file.namelist())
+                        file.extractall(path = "tciaDownload/" + "/" + seriesUID)
+                        # write the series metadata to a dataframe            
+                        manifestDF = pd.concat([manifestDF, pd.DataFrame(metadata)], ignore_index=True)
+                        success += 1;
+                    else:
+                        print("Error:", data.status_code, "Series failed:", seriesUID)
+                        failed += 1;
             else:
                 print("Series", seriesUID, "already downloaded.")
-
+                previous += 1;
+            
             # Repeat n times for demo purposes
             count += 1;
             if count == 3:
                 break
-        print("Sample download complete.")
+
+        print("Download Complete. Attempted", len(series_data), "Series Instance UIDs (scans).")
+        print(success, "successfully downloaded.")
+        print(failed, "failed to download.")
+        print(previous, "previously downloaded.")
 
         # display manifest dataframe and/or save manifest to CSV file
         if csv_filename != "":
@@ -758,6 +781,9 @@ def downloadSeries(series_data, api_url = "", input_type = "", csv_filename=""):
     global api_call_headers
     manifestDF=pd.DataFrame()
     seriesUID = ''
+    success = 0
+    failed = 0
+    previous = 0
 
     # set API URL function
     if api_url == "" or api_url == "nlst" or api_url == "restricted":
@@ -766,7 +792,7 @@ def downloadSeries(series_data, api_url = "", input_type = "", csv_filename=""):
         base_url = setApiUrl()
         print("Invalid api_url selection. Try 'nlst' or 'restricted' for special use cases.\nDefaulting to open-access APIs from", base_url)
 
-    print("Downloading", len(series_data), "Series Instance UIDs (scans).")
+    print("Attempting to download", len(series_data), "Series Instance UIDs (scans).")
 
     try:
         for x in series_data:
@@ -783,20 +809,37 @@ def downloadSeries(series_data, api_url = "", input_type = "", csv_filename=""):
                 print("Downloading... " + data_url)
                 if api_url == "restricted":
                     data = requests.get(data_url, headers = api_call_headers)
-                    metadata = requests.get(metadata_url, headers = api_call_headers).json()
+                    if data.status_code == 200:
+                        metadata = requests.get(metadata_url, headers = api_call_headers).json()
+                        file = zipfile.ZipFile(io.BytesIO(data.content))
+                        # print(file.namelist())
+                        file.extractall(path = "tciaDownload/" + "/" + seriesUID)
+                        # write the series metadata to a dataframe            
+                        manifestDF = pd.concat([manifestDF, pd.DataFrame(metadata)], ignore_index=True)
+                        success += 1;
+                    else:
+                        print("Error:", data.status_code, "Series failed:", seriesUID)
+                        failed += 1;
                 else:
                     data = requests.get(data_url)
-                    metadata = requests.get(metadata_url).json()
-                file = zipfile.ZipFile(io.BytesIO(data.content))
-                # print(file.namelist())
-                file.extractall(path = "tciaDownload/" + "/" + seriesUID)
-                # write the series metadata to a dataframe            
-                manifestDF = pd.concat([manifestDF, pd.DataFrame(metadata)], ignore_index=True)                
+                    if data.status_code == 200:
+                        metadata = requests.get(metadata_url).json()
+                        file = zipfile.ZipFile(io.BytesIO(data.content))
+                        # print(file.namelist())
+                        file.extractall(path = "tciaDownload/" + "/" + seriesUID)
+                        # write the series metadata to a dataframe            
+                        manifestDF = pd.concat([manifestDF, pd.DataFrame(metadata)], ignore_index=True)
+                        success += 1;
+                    else:
+                        print("Error:", data.status_code, "Series failed:", seriesUID)
+                        failed += 1;
             else:
                 print("Series", seriesUID, "already downloaded.")
-
-        print("Download Complete:", len(series_data), "Series Instance UIDs (scans).")
-        
+                previous += 1;
+        print("Download Complete. Attempted", len(series_data), "Series Instance UIDs (scans).")
+        print(success, "successfully downloaded.")
+        print(failed, "failed to download.")
+        print(previous, "previously downloaded.")
         # display manifest dataframe and/or save manifest to CSV file
         if csv_filename != "":
             manifestDF.to_csv(csv_filename + '.csv')
