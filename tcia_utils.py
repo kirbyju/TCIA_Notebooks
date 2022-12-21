@@ -92,21 +92,29 @@ def getToken(api_url = ""):
         if api_url == "nlst":
             # create nlst token
             url = nlst_token_url + userName + "&password=" + passWord + "&grant_type=password&client_id=nbiaRestAPIClient&client_secret=ItsBetweenUAndMe"
-            access_token = requests.get(url).json()["access_token"]
-            # track expiration status/time (2 hours from creation)
-            current_time = datetime.now()
-            nlst_token_exp_time = current_time + timedelta(hours=2)
-            nlst_api_call_headers = {'Authorization': 'Bearer ' + access_token}
-            print ('Success - Token saved to nlst_api_call_headers variable and expires at', nlst_token_exp_time)
+            data = requests.get(url)
+            if data.status_code == 200:
+                access_token = data.json()["access_token"]
+                # track expiration status/time (2 hours from creation)
+                current_time = datetime.now()
+                nlst_token_exp_time = current_time + timedelta(hours=2)
+                nlst_api_call_headers = {'Authorization': 'Bearer ' + access_token}
+                print ('Success - Token saved to nlst_api_call_headers variable and expires at', nlst_token_exp_time)
+            else:
+                print("Error:", data.status_code, ". Check your user name and password.")
         else:
             # create regular token
             url = token_url + userName + "&password=" + passWord + "&grant_type=password&client_id=nbiaRestAPIClient&client_secret=ItsBetweenUAndMe"
-            access_token = requests.get(url).json()["access_token"]
-            # track expiration status/time (2 hours from creation)
-            current_time = datetime.now()
-            token_exp_time = current_time + timedelta(hours=2)
-            api_call_headers = {'Authorization': 'Bearer ' + access_token}
-            print ('Success - Token saved to api_call_headers variable and expires at', token_exp_time)
+            data = requests.get(url)
+            if data.status_code == 200:
+                access_token = data.json()["access_token"]
+                # track expiration status/time (2 hours from creation)
+                current_time = datetime.now()
+                token_exp_time = current_time + timedelta(hours=2)
+                api_call_headers = {'Authorization': 'Bearer ' + access_token}
+                print ('Success - Token saved to api_call_headers variable and expires at', token_exp_time)
+            else:
+                print("Error:", data.status_code, ". Check your user name and password.")
 
     except requests.exceptions.HTTPError as errh:
         print(errh)
