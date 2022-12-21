@@ -773,6 +773,7 @@ def downloadSampleSeries(series_data, api_url = "", input_type = "", csv_filenam
 # Ingests a set of seriesUids and downloads them
 # By default, series_data expects JSON containing "SeriesInstanceUID" elements
 # Set input_type = "list" to pass a list of Series UIDs instead of JSON
+# Set input_type = "uid" to download a single Series Instance UID
 # Generates a dataframe of the series metadata
 # Exports a CSV of the series metadata if csv_filename is specified
 
@@ -792,6 +793,10 @@ def downloadSeries(series_data, api_url = "", input_type = "", csv_filename=""):
         base_url = setApiUrl()
         print("Invalid api_url selection. Try 'nlst' or 'restricted' for special use cases.\nDefaulting to open-access APIs from", base_url)
 
+    if input_type == "uid":
+        series_data = [series_data]
+        input_type = "list"
+        
     print("Attempting to download", len(series_data), "Series Instance UIDs (scans).")
 
     try:
