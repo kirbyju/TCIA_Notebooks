@@ -697,7 +697,7 @@ def downloadSampleSeries(series_data, api_url = "", input_type = "", csv_filenam
         base_url = setApiUrl()
         print("Invalid api_url selection. Try 'nlst' or 'restricted' for special use cases.\nDefaulting to open-access APIs from", base_url)
 
-    print("Attempting to download", len(series_data), "Series Instance UIDs (scans).")
+    print("Attempting to download first 3 out of", len(series_data), "Series Instance UIDs (scans).")
 
     try:
         for x in series_data:
@@ -747,7 +747,7 @@ def downloadSampleSeries(series_data, api_url = "", input_type = "", csv_filenam
             if count == 3:
                 break
 
-        print("Download Complete. Attempted", len(series_data), "Series Instance UIDs (scans).")
+        print("Download Complete. Attempted downloading first 3 out of", len(series_data), "Series Instance UIDs (scans).")
         print(success, "successfully downloaded.")
         print(failed, "failed to download.")
         print(previous, "previously downloaded.")
