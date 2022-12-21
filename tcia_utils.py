@@ -862,6 +862,65 @@ def downloadSeries(series_data, api_url = "", input_type = "", csv_filename=""):
     except requests.exceptions.RequestException as err:
         print(err)
         
+####### downloadImage function
+# Ingests a seriesUids and SopInstanceUid and downloads the image
+
+def downloadImage(seriesUID, sopUID, api_url = "", input_type = "", csv_filename=""):
+
+    global api_call_headers
+    success = 0
+    failed = 0
+    previous = 0
+
+    # set API URL function
+    if api_url == "" or api_url == "nlst" or api_url == "restricted":
+        base_url = setApiUrl(api_url)            
+    else:
+        base_url = setApiUrl()
+        print("Invalid api_url selection. Try 'nlst' or 'restricted' for special use cases.\nDefaulting to open-access APIs from", base_url)
+
+    try:
+        path = "tciaDownload/" + seriesUID
+        file = sopUID + ".dcm"
+        if not os.path.isfile(path + "/" + file):
+            data_url = base_url + 'getSingleImage?SeriesInstanceUID=' + seriesUID + '&SOPInstanceUID=' + sopUID
+            print("Downloading... " + data_url)
+            if api_url == "restricted":
+                data = requests.get(data_url, headers = api_call_headers)
+                if data.status_code == 200:  
+                    if not os.path.exists(path):
+                        os.mkdir(path)
+                    with open(path + "/" + file, 'wb') as f:
+                        f.write(data.content)
+                    print("Saved to " + path + "/" + file)
+                else:
+                    print("Error:", data.status_code, ", double check your permissions and Series/SOP UIDs.")
+                    print("Series UID:", seriesUID)
+                    print("SOP UID: ", sopUID)
+            else:
+                data = requests.get(data_url)
+                if data.status_code == 200:
+                    if not os.path.exists(path):
+                        os.mkdir(path)
+                    with open(path + "/" + file, 'wb') as f:
+                        f.write(data.content)
+                    print("Saved to " + path + "/" + file)
+                else:
+                    print("Error:", data.status_code, ", double check your permissions and Series/SOP UIDs.")
+                    print("Series UID:", seriesUID)
+                    print("SOP UID: ", sopUID)
+        else:
+            print("Image", sopUID, "already downloaded to:\n" + path)
+
+    except requests.exceptions.HTTPError as errh:
+        print(errh)
+    except requests.exceptions.ConnectionError as errc:
+        print(errc)
+    except requests.exceptions.Timeout as errt:
+        print(errt)
+    except requests.exceptions.RequestException as err:
+        print(err)
+        
 ##########################
 ##########################
 # Advanced API Endpoints
