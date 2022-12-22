@@ -1075,6 +1075,32 @@ def getSeriesList(list, api_url = "", csv_filename = ""):
     except requests.exceptions.RequestException as err:
         print(err)
         
+####### getDicomTags function (Advanced)
+# Gets DICOM tag metadata for a given series UID (scan)
+# Returns result as JSON
+
+def getDicomTags(seriesUid, api_url = ""):
+
+    # read api_call_headers from global variable
+    global api_call_headers
+
+    # set base_url 
+    if api_url == "nlst" or api_url == "nlst-advanced":
+        base_url = setApiUrl("nlst-advanced")
+    else:
+        base_url = setApiUrl("advanced")
+    data_url = base_url + "getDicomTags?SeriesUID=" + seriesUid
+    print('Calling... ', data_url)
+    if api_url == "nlst" or api_url == "nlst-advanced":
+        data = requests.get(data_url, headers = nlst_api_call_headers)
+    else:
+        data = requests.get(data_url, headers = api_call_headers)
+    if data.status_code == 200:
+        data = data.json()
+        return data
+    else:
+        print("Error:", data.status_code, ", verify your series UID is correct:", seriesUid)
+        
 ##########################
 ##########################
 # Miscellaneous
