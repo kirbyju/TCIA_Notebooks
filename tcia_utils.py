@@ -521,11 +521,13 @@ def downloadSeries(series_data,
                 print("Series", seriesUID, "already downloaded.")
                 previous += 1;
         if number > 0:
-            print("Downloaded", success, "out of", number, "Series Instance UIDs (scans).")
+            print("Downloaded", success, "out of", number, "requested series from a total of",
+                  len(series_data), "Series Instance UIDs (scans).")
         else:
             print("Downloaded", success, "out of", len(series_data), "Series Instance UIDs (scans).")
         print(failed, "failed to download.")
         print(previous, "previously downloaded.")
+        
         # display manifest dataframe and/or save manifest to CSV file
         if csv_filename != "":
             manifestDF.to_csv(csv_filename + '.csv')
