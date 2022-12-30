@@ -496,7 +496,7 @@ def downloadSeries(series_data,
                         manifestDF = pd.concat([manifestDF, pd.DataFrame(metadata)], ignore_index=True)
                         success += 1;
                         if number > 0:
-                            if count == number:
+                            if success == number:
                                 break
                     else:
                         print("Error:", data.status_code, "Series failed:", seriesUID)
