@@ -1,5 +1,5 @@
 # TCIA_Notebooks
-This is a home for notebooks which demonstrate how to access and work with TCIA datasets. 
+This is a home for notebooks which demonstrate how to access and work with TCIA datasets. Most of them heavily leverage functionality from [tcia_utils.py](https://github.com/kirbyju/TCIA_Notebooks/blob/main/tcia_utils.py)
 
 # General Notebooks
 *  [TCIA_Linux_Data_Retriever_App.ipynb](https://github.com/kirbyju/TCIA_Notebooks/blob/main/TCIA_Linux_Data_Retriever_App.ipynb) - A tutorial on how to install the [NBIA Data Retriever command-line Data Retriever utility on Linux](https://wiki.cancerimagingarchive.net/x/2QKPBQ) and use it to download TCIA datasets
@@ -17,3 +17,4 @@ This is a home for notebooks which demonstrate how to access and work with TCIA 
 # Collection-specific Notebooks
 *  [ACNS0332.ipynb](https://github.com/kirbyju/TCIA_Notebooks/blob/main/ACNS0332/ACNS0332.ipynb) - A tutorial on accessing DICOM images, clinical data, and tumor annotations (3d segmentations & seed points) related to the ["Annotations for Chemotherapy and Radiation Therapy in Treating Young Patients With Newly Diagnosed, Previously Untreated, High-Risk Medulloblastoma/PNET (ACNS0332-Tumor-Annotations)"](https://doi.org/10.7937/D8A8-6252) dataset hosted on TCIA
 *  [AREN0533.ipynb](https://github.com/kirbyju/TCIA_Notebooks/blob/main/AREN0533/AREN0533.ipynb) - A tutorial on accessing DICOM images, clinical data, and tumor annotations (3d segmentations & seed points) related to the ["Annotations for Combination Chemotherapy With or Without Radiation Therapy in Treating Young Patients With Newly Diagnosed Stage III or Stage IV Wilms Tumor (AREN0533-Tumor-Annotations)"](https://doi.org/10.7937/WFCC-DA41) dataset hosted on TCIA
+*  [AREN0534.ipynb](https://github.com/kirbyju/TCIA_Notebooks/blob/main/AREN0534/AREN0534.ipynb) - A tutorial on accessing DICOM images, clinical data, and tumor annotations (3d segmentations & seed points) related to the ["Annotations for Combination Chemotherapy and Surgery in Treating Young Patients With Wilms Tumor (AREN0534-Tumor-Annotations)"](https://doi.org/10.7937/N930-BM78) dataset hosted on TCIA
