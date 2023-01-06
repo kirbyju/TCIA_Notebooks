@@ -440,6 +440,7 @@ def getSharedCart(name,
 # Ingests a set of seriesUids and downloads them
 # By default, series_data expects JSON containing "SeriesInstanceUID" elements
 # Set number = n to download the first n series if you don't want the full dataset
+# Set hash = y if you'd like to retrieve MD5 hash values for each image
 # Set input_type = "list" to pass a list of Series UIDs instead of JSON
 # Set input_type = "uid" to download a single Series Instance UID
 # Generates a dataframe of the series metadata
@@ -447,6 +448,7 @@ def getSharedCart(name,
 
 def downloadSeries(series_data, 
                    number = 0,
+                   hash = "",
                    api_url = "", 
                    input_type = "", 
                    csv_filename=""):
@@ -466,11 +468,18 @@ def downloadSeries(series_data,
     # get base URL
     base_url = setApiUrl(endpoint, api_url)
 
+    # set sample size if you don't want to download the full set of results
     if number > 0:
         print("Downloading", number, "out of", len(series_data), "Series Instance UIDs (scans).")
     else:
         print("Downloading", len(series_data), "Series Instance UIDs (scans).")
     
+    # set option to include md5 hashes
+    if hash == "y":
+        downloadOptions = "getImageWithMD5Hash?SeriesInstanceUID="
+    else:
+        downloadOptions = "getImage?NewFileNames=Yes&SeriesInstanceUID="
+
     # get the data
     try:
         for x in series_data:
@@ -482,7 +491,7 @@ def downloadSeries(series_data,
             # set path for downloads and check for previously downloaded data
             path = "tciaDownload/" + seriesUID
             if not os.path.isdir(path):
-                data_url = base_url + 'getImage?NewFileNames=Yes&SeriesInstanceUID=' + seriesUID
+                data_url = base_url + downloadOptions + seriesUID
                 metadata_url = base_url + "getSeriesMetaData?SeriesInstanceUID=" + seriesUID
                 print("Downloading... " + data_url)
                 if api_url == "restricted":
