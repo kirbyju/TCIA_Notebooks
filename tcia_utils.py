@@ -722,7 +722,63 @@ def getDicomTags(seriesUid,
 
     data = queryData(endpoint, options, api_url, format)
     return data
-        
+    
+####### getDoiMetadata function
+# Gets a list of Collections or Series associated with a DOI
+# Requires a DOI URL and specification of Collection or Series UID output
+# Result includes whether the data are 3rd party analyses or not
+# Formats output as JSON by default with options for "df" (dataframe) and "csv"
+
+def getDoiMetadata(doi, output, api_url = "", format = ""):
+
+#DOI=https://doifor-CBIS-DDSM&CollectionOrSeries=collection
+    param = {'DOI': doi,
+             'CollectionOrSeries': output}
+    
+    endpoint = "getCollectionOrSeriesForDOI"
+
+    # set base_url 
+    base_url = setApiUrl(endpoint, api_url)
+    
+    # full url
+    url = base_url + endpoint
+    print('Calling... ', url)
+
+    # get data & handle any request.post() errors
+    try:
+        if api_url == "nlst":
+            metadata = requests.post(url, headers = nlst_api_call_headers, data = param)
+        else:
+            metadata = requests.post(url, headers = api_call_headers, data = param)
+        metadata.raise_for_status()
+
+        # check for empty results and format output
+        if metadata.text != "[]":
+            print(metadata.text)
+            metadata = metadata.json()
+            # format the output (optional)
+            if format == "df":
+                df = pd.DataFrame(metadata)
+                return df
+            elif format == "csv":
+                df = pd.DataFrame(metadata)
+                df.to_csv(endpoint + ".csv")
+                print("CSV saved to: " + endpoint + ".csv")
+                return df
+            else:
+                return metadata
+        else:
+            print("No results found.")
+
+    except requests.exceptions.HTTPError as errh:
+        print(errh)
+    except requests.exceptions.ConnectionError as errc:
+        print(errc)
+    except requests.exceptions.Timeout as errt:
+        print(errt)
+    except requests.exceptions.RequestException as err:
+        print(err)
+    
 ##########################
 ##########################
 # Miscellaneous
