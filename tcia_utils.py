@@ -1,3 +1,6 @@
+####### install packages
+!pip install pydicom
+
 ####### setup
 import requests
 import pandas as pd
@@ -8,6 +11,11 @@ import io
 import os
 from datetime import datetime
 from datetime import timedelta
+import matplotlib.pyplot as plt
+import pydicom
+import numpy as np 
+from ipywidgets.widgets import * 
+import ipywidgets as widgets
 
 class StopExecution(Exception):
     def _render_traceback_(self):
@@ -873,3 +881,79 @@ def makeVizLinks(series_data, csv_filename=""):
         return df
     else:
         return df
+
+####### viewSeries function
+# Visualize a Series (scan) you've downloaded in the notebook
+# Requires EITHER a seriesUid or path parameter
+# Leave seriesUid empty if you want to provide a custom path
+# The function assumes "tciaDownload/<seriesUid>/" as path if seriesUid is provided
+#   since this is how downloadSeries() saves things
+
+def viewSeries(seriesUid = "", path = ""):
+
+    # set path where downloadSeries() saves the data if seriesUid is provide
+    if seriesUid != "":
+        path = "tciaDownload/" + seriesUid
+
+    # Verify series exists before visualizing
+    if os.path.isdir(path):
+        # load scan to pydicom
+        slices = [pydicom.dcmread(path + '/' + s) for s in               
+                  os.listdir(path) if s.endswith(".dcm")]
+
+        # todo: figure out why this breaks in some cases or if it's even needed
+        #slices = [s for s in slices if 'SliceLocation' in s]
+
+        slices.sort(key = lambda x: int(x.InstanceNumber))
+
+        try:
+            modality = slices[0].Modality
+        except IndexError:
+            print("Cannot find a valid DICOM series at:")
+            print(path)
+            print("Try running downloadSeries(seriesUid, input_type = \"uid\") to download it first.")
+            print("If the data isn't restricted, you can alternatively view it in your browser (without downloading) using this link:")
+            print("https://nbia.cancerimagingarchive.net/viewer/?series=" + seriesUid)
+            raise StopExecution
+
+        try:
+            slice_thickness = np.abs(slices[0].ImagePositionPatient[2] -   
+                              slices[1].ImagePositionPatient[2])
+        except:
+            slice_thickness = np.abs(slices[0].SliceLocation - 
+                                    slices[1].SliceLocation)
+        for s in slices:
+            s.SliceThickness = slice_thickness
+
+        image = np.stack([s.pixel_array for s in slices])
+        image = image.astype(np.int16)
+
+        if modality == "CT":
+            # Set outside-of-scan pixels to 0
+            # The intercept is usually -1024, so air is approximately 0
+            image[image == -2000] = 0
+            
+            # Convert to Hounsfield units (HU)
+            intercept = slices[0].RescaleIntercept
+            slope = slices[0].RescaleSlope
+            
+            if slope != 1:
+                image = slope * image.astype(np.float64)
+                image = image.astype(np.int16)
+                
+            image += np.int16(intercept)
+        
+        pixel_data = np.array(image, dtype=np.int16)
+
+        # slide through dicom images using a slide bar 
+        plt.figure(1)
+        def dicom_animation(x):
+            plt.imshow(pixel_data[x], cmap = plt.cm.gray)
+            return x
+        interact(dicom_animation, x=(0, len(pixel_data)-1))
+    else:
+        print("Cannot find a valid DICOM series at:")
+        print(path)
+        print("Try running downloadSeries(seriesUid, input_type = \"uid\") to download it first.")
+        print("If the data isn't restricted, you can alternatively view it in your browser (without downloading) using this link:")
+        print("https://nbia.cancerimagingarchive.net/viewer/?series=" + seriesUid)
