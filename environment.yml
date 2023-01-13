@@ -17,3 +17,5 @@ dependencies:
     - itkwidgets[all]==1.0a20
     - imjoy-jupyterlab-extension
     - pydicom
+    - matplotlib
+    - ipywidgets
