@@ -1,6 +1,3 @@
-####### install packages
-pip install pydicom
-
 ####### setup
 import requests
 import pandas as pd
