@@ -16,3 +16,4 @@ dependencies:
     - itk==5.3.0
     - itkwidgets[all]==1.0a20
     - imjoy-jupyterlab-extension
+    - pydicom
