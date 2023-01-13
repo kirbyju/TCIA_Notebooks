@@ -1,5 +1,5 @@
 ####### install packages
-!pip install pydicom
+pip install pydicom
 
 ####### setup
 import requests
