@@ -1,5 +1,5 @@
 # TCIA_Notebooks
-This is a home for notebooks which demonstrate how to access and work with TCIA datasets. Most of them heavily leverage functionality from [tcia_utils.py](https://github.com/kirbyju/TCIA_Notebooks/blob/main/tcia_utils.py)
+This is a home for notebooks which demonstrate how to access and work with TCIA datasets. Most of them heavily leverage functionality from [tcia_utils](https://pypi.org/project/tcia-utils/).
 
 # General Notebooks
 *  [TCIA_Linux_Data_Retriever_App.ipynb](https://github.com/kirbyju/TCIA_Notebooks/blob/main/TCIA_Linux_Data_Retriever_App.ipynb) - A tutorial on how to install the [NBIA Data Retriever command-line Data Retriever utility on Linux](https://wiki.cancerimagingarchive.net/x/2QKPBQ) and use it to download TCIA datasets
