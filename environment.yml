@@ -14,7 +14,7 @@ dependencies:
     - monai
     - requests
     - itk==5.3.0
-    - itkwidgets[all]==1.0a20
+    - itkwidgets[all]==1.0a23
     - imjoy-jupyterlab-extension
     - pydicom
     - matplotlib
