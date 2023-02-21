@@ -1,6 +1,9 @@
 # TCIA_Notebooks
 This is a home for notebooks which demonstrate how to access and work with TCIA datasets. Most of them heavily leverage functionality from [tcia_utils](https://pypi.org/project/tcia-utils/).
 
+# Environment Setup
+* [EnvironmentCheck.ipynb](https://github.com/kirbyju/TCIA_Notebooks/blob/main/EnvironmentCheck.ipynb) - Checks the environment that you are running in to make sure that all required dependencies and extensions are correctly installed. Ideally run first before any other notebooks to prevent common issues around dependencies and extension loading.
+
 # General Notebooks
 *  [TCIA_Linux_Data_Retriever_App.ipynb](https://github.com/kirbyju/TCIA_Notebooks/blob/main/TCIA_Linux_Data_Retriever_App.ipynb) - A tutorial on how to install the [NBIA Data Retriever command-line Data Retriever utility on Linux](https://wiki.cancerimagingarchive.net/x/2QKPBQ) and use it to download TCIA datasets
 *  [TCIA_REST_API_Queries.ipynb](https://github.com/kirbyju/TCIA_Notebooks/blob/main/TCIA_REST_API_Queries.ipynb) - A Python tutorial on how to use TCIA's REST API to ***query*** datasets
