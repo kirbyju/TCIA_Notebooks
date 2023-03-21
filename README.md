@@ -6,8 +6,8 @@ This is a home for notebooks which demonstrate how to access and work with TCIA 
 
 # General Notebooks
 *  [TCIA_Linux_Data_Retriever_App.ipynb](https://github.com/kirbyju/TCIA_Notebooks/blob/main/TCIA_Linux_Data_Retriever_App.ipynb) - A tutorial on how to install the [NBIA Data Retriever command-line Data Retriever utility on Linux](https://wiki.cancerimagingarchive.net/x/2QKPBQ) and use it to download TCIA datasets
-*  [TCIA_REST_API_Queries.ipynb](https://github.com/kirbyju/TCIA_Notebooks/blob/main/TCIA_REST_API_Queries.ipynb) - A Python tutorial on how to use TCIA's REST API to ***query*** datasets
-*  [TCIA_REST_API_Downloads.ipynb](https://github.com/kirbyju/TCIA_Notebooks/blob/main/TCIA_REST_API_Downloads.ipynb) - A Python tutorial on how to use TCIA's REST API to ***download*** datasets
+*  [TCIA_REST_API_Queries.ipynb](https://github.com/kirbyju/TCIA_Notebooks/blob/main/TCIA_REST_API_Queries.ipynb) - A Python tutorial on how to use the NBIA REST API to ***query*** radiology (DICOM) datasets
+*  [TCIA_REST_API_Downloads.ipynb](https://github.com/kirbyju/TCIA_Notebooks/blob/main/TCIA_REST_API_Downloads.ipynb) - A Python tutorial on how to use the NBIA REST API to ***download*** radiology (DICOM) datasets
 *  [TCIA_Series_UID_Report.ipynb](https://github.com/kirbyju/TCIA_Notebooks/blob/main/TCIA_Series_UID_Report.ipynb) - Ingests a file containing TCIA Series Instance UIDs (e.g. TCIA manifest file or CSV of UIDs) and creates reports that summarize those scans
 * [TCIA_Aspera_CLI_Downloads.ipynb](https://github.com/kirbyju/TCIA_Notebooks/blob/main/TCIA_Aspera_CLI_Downloads.ipynb) - A short tutorial on how to download TCIA datasets that are made available through Aspera via the command line (rather than via the Aspera browser plugin).  TCIA typically uses Aspera for downloading histopathology collections or radiology collections that were provided in a format other than DICOM.
 
