@@ -13,8 +13,8 @@ dependencies:
     - torch
     - monai
     - requests
-    - itk==5.3.0
-    - itkwidgets[all]==1.0a49
+    - itk==5.4.0
+    - itkwidgets[all]==1.0a53
     - imjoy-jupyterlab-extension
     - pydicom
     - matplotlib
