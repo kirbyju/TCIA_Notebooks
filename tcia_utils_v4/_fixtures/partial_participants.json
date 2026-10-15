@@ -1,0 +1,25 @@
+{
+  "participants": [
+    {
+      "participant_key": "collection:EXAMPLE:0007",
+      "dataset_type": "collection",
+      "short_title": "EXAMPLE",
+      "display_participant_id": "0007",
+      "identity_scope": "dataset",
+      "within_dataset_identity_status": "resolved",
+      "cross_dataset_identity_status": "unresolved",
+      "source_namespaces": [
+        "example"
+      ],
+      "has_open_data": 1,
+      "has_controlled_data": 0
+    }
+  ],
+  "count": 1,
+  "limit": 1,
+  "has_more": true,
+  "truncated": true,
+  "next_cursor": "opaque-fixture-cursor",
+  "identity_scope": "Participant identity is dataset-scoped.",
+  "public_dicom_detail_route": "IDC/idc-index"
+}

@@ -1,0 +1,50 @@
+{
+  "observed_at_utc": "2026-10-15T13:50:32.839540+00:00",
+  "mode": "live",
+  "package_version": "4.0.0a1",
+  "idc_index_version": "0.13.0",
+  "idc_index_data_version": "25.0.0",
+  "service_base_url": "https://tcia.duckdns.org",
+  "notebooks": [
+    {
+      "notebook": "01_discover_datasets_citations.ipynb",
+      "mode": "live",
+      "ok": true,
+      "service_unavailable_routes": [],
+      "observed_service_fingerprint": "a74b80068740d823657379be97e704e6db5229424a731de47397aa534213ff29",
+      "observed_idc_index_release": null
+    },
+    {
+      "notebook": "02_public_dicom_idc.ipynb",
+      "mode": "live",
+      "ok": true,
+      "service_unavailable_routes": [],
+      "observed_service_fingerprint": null,
+      "observed_idc_index_release": "v25"
+    },
+    {
+      "notebook": "03_non_dicom_annotations.ipynb",
+      "mode": "live",
+      "ok": true,
+      "service_unavailable_routes": [],
+      "observed_service_fingerprint": null,
+      "observed_idc_index_release": null
+    },
+    {
+      "notebook": "04_controlled_metadata_manifest.ipynb",
+      "mode": "live",
+      "ok": true,
+      "service_unavailable_routes": [],
+      "observed_service_fingerprint": null,
+      "observed_idc_index_release": null
+    },
+    {
+      "notebook": "05_participants_clinical_availability.ipynb",
+      "mode": "live",
+      "ok": true,
+      "service_unavailable_routes": [],
+      "observed_service_fingerprint": null,
+      "observed_idc_index_release": null
+    }
+  ]
+}

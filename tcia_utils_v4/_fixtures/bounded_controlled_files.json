@@ -1,0 +1,33 @@
+{
+  "short_title": "EXAMPLE",
+  "files": [
+    {
+      "short_title": "EXAMPLE",
+      "dataset_type": "collection",
+      "route_system": "ctdc",
+      "download_id": "restricted",
+      "access_level": "controlled",
+      "participant_id": "0007",
+      "file_name": "synthetic.dcm",
+      "file_size_bytes": null,
+      "drs_uri": "drs://example.org/synthetic-0007",
+      "series_instance_uid": "1.2.826.0.1.3680043.10.999.7",
+      "source_manifest_url": null
+    },
+    {
+      "short_title": "EXAMPLE",
+      "dataset_type": "collection",
+      "route_system": "ctdc",
+      "download_id": "restricted",
+      "access_level": "controlled",
+      "participant_id": "0008",
+      "file_name": "unknown-route.dcm",
+      "drs_uri": null,
+      "file_id": "synthetic-0008"
+    }
+  ],
+  "count": 2,
+  "limit": 2,
+  "controlled_access_policy_url": "https://www.cancerimagingarchive.net/nih-controlled-data-access-policy/",
+  "warning": "These are public metadata rows for controlled-access files. The MCP server does not grant authorization and must not download controlled data."
+}

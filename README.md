@@ -1,6 +1,10 @@
 # TCIA_Notebooks
 This is a home for notebooks which demonstrate how to access and work with TCIA datasets. Most of them heavily leverage functionality from [tcia_utils](https://pypi.org/project/tcia-utils/).
 
+# TCIA Utils 4 preview
+
+The new [TCIA Utils 4 tutorials](tcia_utils_v4/README.md) cover dataset discovery, public DICOM with IDC, non-DICOM data, controlled public metadata, and participant/clinical evidence. They require the separate 4.0 preview package; see the setup notes before running them.
+
 # General Notebooks
 * [TCIA_for_Georgetown_HIDS_2026.ipynb](https://github.com/kirbyju/TCIA_Notebooks/blob/main/TCIA_for_Georgetown_HIDS_2026.ipynb) - A comprehensive tutorial presented to the Georgetown HIDS graduate student program which demonstrated how to access TCIA data from various system components. 
 * Accessing TCIA's open-access DICOM data in IDC

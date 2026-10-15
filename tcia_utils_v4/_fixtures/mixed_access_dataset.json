@@ -1,0 +1,50 @@
+{
+  "datasets": [
+    {
+      "short_title": "EXAMPLE",
+      "dataset_type": "collection",
+      "title": "Synthetic mixed-access collection",
+      "doi": "10.0000/example",
+      "resolved_access_level": "mixed",
+      "controlled_access": true,
+      "noncommercial_license": false,
+      "current_download_count": 2,
+      "controlled_download_count": 1,
+      "noncontrolled_download_count": 1,
+      "tcia_page": "https://www.cancerimagingarchive.net/",
+      "controlled_access_policy_url": "https://www.cancerimagingarchive.net/nih-controlled-data-access-policy/"
+    }
+  ],
+  "current_downloads": [
+    {
+      "short_title": "EXAMPLE",
+      "dataset_type": "collection",
+      "download_id": "open",
+      "download_title": "Public images",
+      "access_level": "open",
+      "controlled_access": false,
+      "file_types": [
+        "DICOM"
+      ],
+      "route_system": "idc"
+    },
+    {
+      "short_title": "EXAMPLE",
+      "dataset_type": "collection",
+      "download_id": "restricted",
+      "download_title": "Controlled files",
+      "access_level": "controlled",
+      "controlled_access": true,
+      "file_types": [
+        "DICOM"
+      ],
+      "route_system": "ctdc",
+      "route_manifest_kind": "drs_uri",
+      "controlled_access_policy_url": "https://www.cancerimagingarchive.net/nih-controlled-data-access-policy/"
+    }
+  ],
+  "related_analysis_results": [],
+  "caveats": [
+    "Synthetic fixture; related analyses may be bounded."
+  ]
+}
