@@ -1,10 +1,8 @@
-# Available after the 4.0.0a1 PyPI preview is published.
-tcia_utils==4.0.0a1
-# Tested notebook environment for the 4.0.0a1 source candidate (2026-10-14).
-# Install the built tcia_utils wheel separately; no editable checkout is needed.
-idc-index==0.13.0
-idc-index-data==25.0.0
-pandas==3.0.6
-nbformat==5.11.1
-nbclient==0.11.0
-ipykernel==7.4.0
+# Install the reviewed preview wheel until this version is published.
+tcia_utils[tables]==4.0.0a1
+pandas>=2,<4
+nibabel>=5,<6
+# Maintainer execution tools; the lesson itself does not import these.
+nbformat>=5,<6
+nbclient>=0.11,<1
+ipykernel>=7,<8

@@ -3,7 +3,7 @@ This is a home for notebooks which demonstrate how to access and work with TCIA 
 
 # TCIA Utils 4 preview
 
-The new [TCIA Utils 4 tutorials](tcia_utils_v4/README.md) cover dataset discovery, public DICOM with IDC, non-DICOM data, controlled public metadata, and participant/clinical evidence. They require the separate 4.0 preview package; see the setup notes before running them.
+The new [TCIA Utils 4 workshop](tcia_utils_v4/TCIA_Dataset_and_Participant_Queries.ipynb) is one conversational lesson on finding and downloading datasets, creating participant cohorts, exploring brain MR segmentations, and preparing controlled CT/SEG downloads. It requires the separate 4.0 preview package; see the [setup and validation notes](tcia_utils_v4/README.md).
 
 # General Notebooks
 * [TCIA_for_Georgetown_HIDS_2026.ipynb](https://github.com/kirbyju/TCIA_Notebooks/blob/main/TCIA_for_Georgetown_HIDS_2026.ipynb) - A comprehensive tutorial presented to the Georgetown HIDS graduate student program which demonstrated how to access TCIA data from various system components. 
