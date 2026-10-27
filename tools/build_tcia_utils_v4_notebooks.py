@@ -8,7 +8,7 @@ cells = []
 def md(source): cells.append(nbf.v4.new_markdown_cell(source.strip()))
 def code(source, **metadata): cells.append(nbf.v4.new_code_cell(source.strip(), metadata=metadata))
 
-md('''[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/kirbyju/TCIA_Notebooks/blob/codex/tcia-utils-v4-notebooks/tcia_utils_v4/TCIA_Dataset_and_Participant_Queries.ipynb)
+md('''[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/kirbyju/TCIA_Notebooks/blob/main/tcia_utils_v4/TCIA_Dataset_and_Participant_Queries.ipynb)
 
 # Finding datasets and building participant cohorts with TCIA
 
@@ -23,7 +23,7 @@ We'll work through four questions:
 
 Our main example is [CMB-GEC](https://www.cancerimagingarchive.net/collection/cmb-gec/), which includes radiology images, tissue-slide images, and links to clinical information. Later we'll look at brain MR and head-and-neck CT.
 
-**Preview note:** this notebook uses the new `tcia_utils` **4.0.0a1** API and Python **3.11 or newer**. The preview is being prepared for publication; the ordinary 3.x installation will not run these examples. Before publication, install the reviewed preview wheel supplied with the release candidate. After publication, use the installation cell below. This `.ipynb` is self-contained: it does not need other files from this repository.
+**Preview release:** this notebook explicitly opts into the new `tcia_utils` **4.0.0a1** API and requires Python **3.11 or newer**. The ordinary 3.x installation has a different API. Run the installation cell below in a fresh Colab or Jupyter session to try this alpha. This `.ipynb` is self-contained: it does not need other files from this repository.
 
 Running all cells queries real, public metadata and saves small manifests and tables. Image downloads stay off until you choose to run them. You do not need an LLM account or a controlled-data account to explore the metadata.''')
 md('''## Let's get set up
@@ -37,20 +37,12 @@ A **preview release** lets us try the new API before making it the normal versio
 
 The preview is public on PyPI once released; anyone who opts into prereleases can try it. Pinning the exact version makes our test reproducible. Pip also lets users opt into previews with `--pre`; we don't need that flag when we request this exact alpha version. See [pip's prerelease guidance](https://pip.pypa.io/en/stable/cli/pip_install/#pre-release-versions).
 
-**Testing in Colab:** after the notebook branch is pushed to GitHub and the preview is published to PyPI, click **Open In Colab** above. In the next cell, set `INSTALL_FROM_PYPI = True` and run the notebook from the top. This installs the preview in your Colab session. Restart the Python session if prompted after installation. The searches use real public metadata; large image downloads remain your choice.
+**Testing in Colab:** click **Open In Colab** above and run the notebook from the top. The next cell installs this exact alpha in your Colab session. Restart the Python session if prompted after installation. The searches use real public metadata; large image downloads remain your choice.
 
-**Testing in Jupyter:** open this notebook in a fresh Python 3.11+ environment and use the same installation setting. If you already installed the preview wheel there, leave the setting at `False`.
+**Testing in Jupyter:** open this notebook in a fresh Python 3.11+ environment and run the same installation cell. If you already installed this exact preview and its dependencies there, you can set `INSTALL_FROM_PYPI = False` to skip reinstallation.
 
-For now, the badge is prepared for the preview branch and the PyPI version is still unpublished. You can also use Colab's **File > Upload notebook** to open this `.ipynb` before the GitHub push, then install the supplied wheel instead.
-
-Before publication, install the supplied wheel in a separate environment with:
-
-```python
-%pip install "/path/to/tcia_utils-4.0.0a1-py3-none-any.whl" "pandas>=2,<4" "nibabel>=5,<6"
-```
-
-Replace the wheel path with its location on your computer. `pandas` helps us work with tables. `nibabel` is only needed for the optional NIfTI check near the end.''')
-code('''INSTALL_FROM_PYPI = False  # Set True after the preview is published.
+`pandas` helps us work with tables. `nibabel` is used only by the optional NIfTI check near the end. If something goes wrong, report the failing cell and error message at the [tcia_utils issue tracker](https://github.com/kirbyju/tcia_utils/issues), along with your Python and package versions. Keep credentials out of reports.''')
+code('''INSTALL_FROM_PYPI = True  # This notebook opts into the exact alpha release.
 if INSTALL_FROM_PYPI:
     import subprocess, sys
     subprocess.check_call([sys.executable, "-m", "pip", "install",

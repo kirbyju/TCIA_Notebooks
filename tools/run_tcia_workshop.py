@@ -130,6 +130,13 @@ def main():
         report_path = temporary / 'report.json'
         nb = nbformat.read(source, as_version=4)
         nbformat.validate(nb)
+        # CI verifies the already-installed wheel. Readers run the original PyPI
+        # installation cell; validation skips it explicitly rather than using a
+        # network install to replace the artifact under test.
+        installers = [cell for cell in nb.cells if "installation" in cell.metadata.get("tags", [])]
+        if len(installers) != 1:
+            raise RuntimeError("Expected exactly one tagged installation cell")
+        installers[0].source = 'INSTALL_FROM_PYPI = False\nprint("Validation uses the installed package; PyPI installation cell skipped.")'
         prelude = PRELUDE.replace('MODE_VALUE', repr(args.mode)).replace('CASSETTE_VALUE', repr(str(cassette)))
         postlude = 'import sys\n' + POSTLUDE.replace('REPORT_VALUE', repr(str(report_path)))
         nb.cells.insert(0, nbformat.v4.new_code_cell(prelude))
@@ -150,7 +157,8 @@ def main():
         findings = json.loads(report_path.read_text())
         findings.update({'observed_at_utc': datetime.now(timezone.utc).isoformat(),
                          'mode': args.mode, 'notebook': NAME, 'ok': True,
-                         'notebook_sha256': __import__('hashlib').sha256(source.read_bytes()).hexdigest()})
+                         'notebook_sha256': __import__('hashlib').sha256(source.read_bytes()).hexdigest(),
+                         'installation_cell_skipped_for_installed_artifact': True})
         if args.mode == 'fixture':
             findings['recorded_metadata_at_utc'] = json.loads(gzip.decompress(cassette.read_bytes()))['observed_at_utc']
         if args.report:

@@ -1,6 +1,6 @@
 # Finding datasets and building participant cohorts with TCIA
 
-[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/kirbyju/TCIA_Notebooks/blob/codex/tcia-utils-v4-notebooks/tcia_utils_v4/TCIA_Dataset_and_Participant_Queries.ipynb)
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/kirbyju/TCIA_Notebooks/blob/main/tcia_utils_v4/TCIA_Dataset_and_Participant_Queries.ipynb)
 
 Open [the workshop notebook](TCIA_Dataset_and_Participant_Queries.ipynb). It is a
 single, self-contained lesson for junior data scientists, written in the
@@ -12,23 +12,20 @@ segmentations in UCSF-PDGM and UPENN-GBM; and a controlled facial-CT/SEG subset
 from HEAD-NECK-RADIOMICS-HN1. It explains public versus controlled access and
 DICOM versus other file formats without teaching the hosting infrastructure.
 
-Use Python 3.11 or newer. The notebook requires the **4.0.0a1 preview** of
-`tcia_utils`, which is not yet published as of 2026-10-27. Before publication,
-install the reviewed candidate wheel and pandas. After publication, its
-installation cell can install the preview and optional NIfTI header reader.
-The stable 3.x package has a different API. Ordinary pip installs continue to
-select the stable version; requesting `tcia_utils[tables]==4.0.0a1` explicitly
-selects the alpha after publication. Users who enable prereleases, for example
-with `--pre`, can also opt in.
+Use Python 3.11 or newer. The notebook explicitly installs the **4.0.0a1
+preview** of `tcia_utils` and its table dependencies. Ordinary pip installs
+continue to select the stable release; requesting this exact alpha is an opt-in.
+The stable 3.x package has a different API. Use a fresh session or environment
+for testing.
 
-The Colab badge targets `codex/tcia-utils-v4-notebooks`; it becomes usable when
-that branch is pushed to GitHub. Once the alpha is on PyPI, set
-`INSTALL_FROM_PYPI = True` in a fresh Colab session and run from the top. Before
-the branch is available, upload the notebook through Colab's File menu and
-install the supplied wheel. The badge is a launch link, not evidence of a tested
-hosted runtime. There is no learner-side helper,
-fixture dependency, repository clone, or LLM requirement. Single-file portability
-was checked in a local Jupyter kernel; a hosted Colab runtime has not been tested.
+Click **Open In Colab** above and run the notebook from the top. In Jupyter,
+open the same file and run its installation cell. If dependencies are already
+installed, set `INSTALL_FROM_PYPI = False` to skip reinstallation. There is no
+learner-side helper, fixture dependency, repository clone, or LLM requirement.
+Single-file execution was checked in a local Jupyter kernel; a hosted Colab
+runtime has not been tested. Report errors at the
+[tcia_utils issue tracker](https://github.com/kirbyju/tcia_utils/issues), including
+the failing cell and your Python/package versions. Never include credentials.
 
 By default, the notebook makes real public metadata queries and saves small
 manifests and tables. All image transfers remain opt-in. Controlled transfers
@@ -69,7 +66,7 @@ Fixture mode replays the compressed **recording of public metadata**, labels it
 as recorded rather than live, and rejects unrecorded HTTP requests. The recording
 is for regression tests, not a current research result. Live validation allows
 only the metadata API and the small official manifest URLs used in the lesson.
-Both modes block transfer subprocesses and require nonempty examples. Use
+Both modes explicitly skip the tagged PyPI installation cell to preserve the installed artifact under test, block transfer subprocesses, and require nonempty examples. Use
 `--mode record` deliberately to refresh the recording after reviewing metadata
 changes; this is separate from publishing or updating the live service.
 
@@ -87,3 +84,8 @@ geometry comparison.
 251-series public DICOM manifest and the 30-row controlled CMB-GEC manifest.
 All 251 public series identifiers appear in the Data Retriever's checked
 main-branch index. No released CLI binary or image payload transfer was tested.
+
+The release-ready notebook also passed [October 27 live metadata validation](validation/2026-10-27-release-live.json)
+and [offline replay](validation/2026-10-27-release-fixture.json). Those checks
+explicitly skip the PyPI installation cell to keep testing the installed wheel;
+readers run the original installation cell to opt into the alpha.
