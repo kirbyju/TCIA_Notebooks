@@ -1,5 +1,7 @@
 # Finding datasets and building participant cohorts with TCIA
 
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/kirbyju/TCIA_Notebooks/blob/codex/tcia-utils-v4-notebooks/tcia_utils_v4/TCIA_Dataset_and_Participant_Queries.ipynb)
+
 Open [the workshop notebook](TCIA_Dataset_and_Participant_Queries.ipynb). It is a
 single, self-contained lesson for junior data scientists, written in the
 conversational style of the existing TCIA notebooks.
@@ -11,10 +13,20 @@ from HEAD-NECK-RADIOMICS-HN1. It explains public versus controlled access and
 DICOM versus other file formats without teaching the hosting infrastructure.
 
 Use Python 3.11 or newer. The notebook requires the **4.0.0a1 preview** of
-`tcia_utils`, which is not yet published as of 2026-10-25. Before publication,
+`tcia_utils`, which is not yet published as of 2026-10-27. Before publication,
 install the reviewed candidate wheel and pandas. After publication, its
 installation cell can install the preview and optional NIfTI header reader.
-The stable 3.x package has a different API. There is no learner-side helper,
+The stable 3.x package has a different API. Ordinary pip installs continue to
+select the stable version; requesting `tcia_utils[tables]==4.0.0a1` explicitly
+selects the alpha after publication. Users who enable prereleases, for example
+with `--pre`, can also opt in.
+
+The Colab badge targets `codex/tcia-utils-v4-notebooks`; it becomes usable when
+that branch is pushed to GitHub. Once the alpha is on PyPI, set
+`INSTALL_FROM_PYPI = True` in a fresh Colab session and run from the top. Before
+the branch is available, upload the notebook through Colab's File menu and
+install the supplied wheel. The badge is a launch link, not evidence of a tested
+hosted runtime. There is no learner-side helper,
 fixture dependency, repository clone, or LLM requirement. Single-file portability
 was checked in a local Jupyter kernel; a hosted Colab runtime has not been tested.
 

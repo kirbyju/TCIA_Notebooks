@@ -8,7 +8,9 @@ cells = []
 def md(source): cells.append(nbf.v4.new_markdown_cell(source.strip()))
 def code(source, **metadata): cells.append(nbf.v4.new_code_cell(source.strip(), metadata=metadata))
 
-md('''# Finding datasets and building participant cohorts with TCIA
+md('''[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/kirbyju/TCIA_Notebooks/blob/codex/tcia-utils-v4-notebooks/tcia_utils_v4/TCIA_Dataset_and_Participant_Queries.ipynb)
+
+# Finding datasets and building participant cohorts with TCIA
 
 In this hands-on lab we'll start with a dataset, then work our way down to individual participants. Along the way we'll find images, clinical information, and segmentation labels. You only need a little Python and some familiarity with pandas tables.
 
@@ -26,7 +28,20 @@ Our main example is [CMB-GEC](https://www.cancerimagingarchive.net/collection/cm
 Running all cells queries real, public metadata and saves small manifests and tables. Image downloads stay off until you choose to run them. You do not need an LLM account or a controlled-data account to explore the metadata.''')
 md('''## Let's get set up
 
-If you already installed the preview, leave the next setting alone. Once `4.0.0a1` is on PyPI, change `INSTALL_FROM_PYPI` to `True` to install it here. In a hosted notebook, restart the Python session if prompted after installation.
+A **preview release** lets us try the new API before making it the normal version that everyone installs. The `a1` in `4.0.0a1` means this is the first alpha preview.
+
+| What you install | Which version you get |
+| --- | --- |
+| `pip install tcia_utils` (ordinary pip settings) | The stable release; publishing this alpha does not switch ordinary installs to v4. |
+| `pip install "tcia_utils[tables]==4.0.0a1"` | This specific preview, once it is published. |
+
+The preview is public on PyPI once released; anyone who opts into prereleases can try it. Pinning the exact version makes our test reproducible. Pip also lets users opt into previews with `--pre`; we don't need that flag when we request this exact alpha version. See [pip's prerelease guidance](https://pip.pypa.io/en/stable/cli/pip_install/#pre-release-versions).
+
+**Testing in Colab:** after the notebook branch is pushed to GitHub and the preview is published to PyPI, click **Open In Colab** above. In the next cell, set `INSTALL_FROM_PYPI = True` and run the notebook from the top. This installs the preview in your Colab session. Restart the Python session if prompted after installation. The searches use real public metadata; large image downloads remain your choice.
+
+**Testing in Jupyter:** open this notebook in a fresh Python 3.11+ environment and use the same installation setting. If you already installed the preview wheel there, leave the setting at `False`.
+
+For now, the badge is prepared for the preview branch and the PyPI version is still unpublished. You can also use Colab's **File > Upload notebook** to open this `.ipynb` before the GitHub push, then install the supplied wheel instead.
 
 Before publication, install the supplied wheel in a separate environment with:
 
