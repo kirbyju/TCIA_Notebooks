@@ -1,0 +1,8 @@
+# Install the reviewed preview wheel until this version is published.
+tcia_utils[tables]==4.0.0a1
+pandas>=2,<4
+nibabel>=5,<6
+# Maintainer execution tools; the lesson itself does not import these.
+nbformat>=5,<6
+nbclient>=0.11,<1
+ipykernel>=7,<8

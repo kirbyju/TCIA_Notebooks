@@ -1,0 +1,50 @@
+{
+  "observed_at_utc": "2026-10-15T13:48:26.485597+00:00",
+  "mode": "fixture",
+  "package_version": "4.0.0a1",
+  "idc_index_version": "0.13.0",
+  "idc_index_data_version": "25.0.0",
+  "service_base_url": "synthetic fixture",
+  "notebooks": [
+    {
+      "notebook": "01_discover_datasets_citations.ipynb",
+      "mode": "fixture",
+      "ok": true,
+      "service_unavailable_routes": [],
+      "observed_service_fingerprint": "synthetic-fixture-v1",
+      "observed_idc_index_release": null
+    },
+    {
+      "notebook": "02_public_dicom_idc.ipynb",
+      "mode": "fixture",
+      "ok": true,
+      "service_unavailable_routes": [],
+      "observed_service_fingerprint": null,
+      "observed_idc_index_release": null
+    },
+    {
+      "notebook": "03_non_dicom_annotations.ipynb",
+      "mode": "fixture",
+      "ok": true,
+      "service_unavailable_routes": [],
+      "observed_service_fingerprint": null,
+      "observed_idc_index_release": null
+    },
+    {
+      "notebook": "04_controlled_metadata_manifest.ipynb",
+      "mode": "fixture",
+      "ok": true,
+      "service_unavailable_routes": [],
+      "observed_service_fingerprint": null,
+      "observed_idc_index_release": null
+    },
+    {
+      "notebook": "05_participants_clinical_availability.ipynb",
+      "mode": "fixture",
+      "ok": true,
+      "service_unavailable_routes": [],
+      "observed_service_fingerprint": null,
+      "observed_idc_index_release": null
+    }
+  ]
+}
