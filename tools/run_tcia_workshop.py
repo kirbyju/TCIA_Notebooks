@@ -71,14 +71,14 @@ print('RECORDED PUBLIC METADATA - not a live query' if _mode == 'fixture' else '
 
 POSTLUDE = r'''
 assert not INSTALL_FROM_PYPI
-assert not DOWNLOAD_PUBLIC_DICOM and not DOWNLOAD_CONTROLLED_CMB and not DOWNLOAD_CONTROLLED_CT
+assert not DOWNLOAD_PUBLIC_DICOM and not DOWNLOAD_PUBLIC_NON_DICOM and not DOWNLOAD_CONTROLLED_CMB and not DOWNLOAD_CONTROLLED_CT
 assert not SOURCE_NIFTI and not MASK_NIFTI
 assert len(cohort) > 0 and len(brain_cohort) > 0 and len(face_selection) > 0
 assert cohort['short_title'].nunique() >= 2, 'Default cohort must actually span datasets.'
 assert {'CT', 'SEG'}.issubset(set(face_selection['modality']))
 assert set(face_selection['access_level']) == {'controlled'}
 assert len(download_plan) == len(retriever_groups) + len(other_groups)
-assert len(other_groups) > 0, 'Reassess the package limitation if current routing has changed.'
+assert len(other_groups) > 0, 'Reassess the original-package example if current routing has changed.'
 assert set(pd.read_csv(face_manifest).columns) == {'drs_uri'}
 assert len(pd.read_csv(face_manifest)) == face_selection['drs_uri'].nunique()
 assert participant_assets.shape[0] > 0 and len(example_facts) > 0
@@ -89,7 +89,7 @@ if _mode == 'record':
     _cassette_path.parent.mkdir(parents=True, exist_ok=True)
     _cassette_path.write_bytes(_gzip.compress(_json.dumps(_capture, separators=(',', ':')).encode(), mtime=0))
 _report = {'fingerprint': SNAPSHOT, 'dataset_groups': len(download_plan),
-    'cli_groups': len(retriever_groups), 'collection_link_groups': len(other_groups),
+    'cli_groups': len(retriever_groups), 'original_package_groups': len(other_groups),
     'candidate_participant_records': len(candidates), 'matched_participant_records': len(cohort),
     'matched_collections': sorted(cohort['short_title'].unique().tolist()),
     'resolved_clinical_values': len(clinical_summary), 'example_clinical_facts': len(example_facts),

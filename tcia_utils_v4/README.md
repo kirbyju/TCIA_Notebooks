@@ -12,8 +12,8 @@ segmentations in UCSF-PDGM and UPENN-GBM; and a controlled facial-CT/SEG subset
 from HEAD-NECK-RADIOMICS-HN1. It explains public versus controlled access and
 DICOM versus other file formats without teaching the hosting infrastructure.
 
-Use Python 3.11 or newer. The notebook explicitly installs the **4.0.0a1
-preview** of `tcia_utils` and its table dependencies. Ordinary pip installs
+Use Python 3.11 or newer. The notebook explicitly installs the **4.0.0a2
+preview** of `tcia_utils` and its table/download dependencies. Ordinary pip installs
 continue to select the stable release; requesting this exact alpha is an opt-in.
 The stable 3.x package has a different API. Use a fresh session or environment
 for testing.
@@ -34,10 +34,8 @@ ships a credential or accepts a policy on the reader's behalf.
 
 ## Current workflow limits
 
-- CMB-GEC's public tissue-slide package cannot currently be retrieved by the
-  Data Retriever CLI. Its official collection download link is included and
-  counted separately. The notebook does not claim that the DICOM commands
-  download the entire collection.
+- Python downloads use `tcia.download_dataset()` or `tcia.download_files()`. Public DICOM reuses `idc-index`, HTTPS files stream directly, and controlled files use the supported authorization API with the reader's approved key file. The notebook includes Data Retriever as an optional alternative.
+- Original tissue-slide packages need separately installed/configured [Aspera CLI](https://github.com/IBM/aspera-cli) and IBM transfer tools. The SDK invokes these tools behind the same Python method; pip alone does not install them. The official download link remains available. Missing requirements stop the selection before payload transfers, and reports keep every selected group visible. DICOM-only transfers do not download the whole collection.
 - Indexed NIfTI file paths are not per-file download URLs. Use the published
   package links. For the inspected files the service exposes geometry status,
   while detailed dimensions/spacing are empty. An optional local header check
@@ -76,9 +74,7 @@ an installed preview wheel. The default CT/diagnosis query matched 17 participan
 records across CMB-GEC and CMB-LCA. The brain query linked 2,261 segmentation files
 to 1,106 participant records; the controlled example selected two CT/SEG files
 for one participant/study. These are indexed records, not unique-person totals
-or verified image/label reference pairs. Nine focused tests cover identity,
-empty searches, route caps, credential-path handling, manifest validation, and
-geometry comparison.
+or verified image/label reference pairs. Those historical checks tested the earlier notebook helpers. The current six notebook tests cover lesson structure, opt-in flags, exact participant/study matching, empty cohorts, and geometry comparison. SDK tests now cover page collection, clinical batching, manifest handling, download routing, authentication boundaries, and transfer failure accounting.
 
 [Download coverage](validation/2026-10-25-download-coverage.json) records the
 251-series public DICOM manifest and the 30-row controlled CMB-GEC manifest.
@@ -89,3 +85,5 @@ The release-ready notebook also passed [October 27 live metadata validation](val
 and [offline replay](validation/2026-10-27-release-fixture.json). Those checks
 explicitly skip the PyPI installation cell to keep testing the installed wheel;
 readers run the original installation cell to opt into the alpha.
+
+The October 28 revision removes prerelease background from the lesson, displays published download categories, and uses SDK helpers instead of custom notebook functions. Its [live metadata validation](validation/2026-10-28-live.json) and [recorded replay](validation/2026-10-28-fixture.json) exercise the installed 4.0.0a2 wheel. Imaging transfers stay off; controlled and original-package payload routes are covered by synthetic adapter tests, not live authorized transfers. HTTP reports distinguish available size/checksum verification from delegated engine completion.
