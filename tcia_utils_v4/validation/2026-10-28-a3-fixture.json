@@ -1,0 +1,30 @@
+{
+  "fingerprint": "b76cf1c5b2f5f431d3ce028ed23fd43dd496faba61f106a2f744ce244bd3fa3c",
+  "dataset_groups": 3,
+  "cli_groups": 2,
+  "original_package_groups": 1,
+  "candidate_participant_records": 101,
+  "matched_participant_records": 17,
+  "matched_collections": [
+    "CMB-GEC",
+    "CMB-LCA"
+  ],
+  "resolved_clinical_values": 193,
+  "example_clinical_facts": 32,
+  "brain_participant_records": 1106,
+  "brain_segmentation_files": 2261,
+  "brain_example_files": 23,
+  "controlled_ct_seg_studies": 137,
+  "controlled_selected_files": 2,
+  "unique_http_requests": 30,
+  "payload_transfers": 0,
+  "package_version": "4.0.0a3",
+  "python": "3.13.7",
+  "observed_at_utc": "2026-10-28T19:14:57.821578+00:00",
+  "mode": "fixture",
+  "notebook": "TCIA_Dataset_and_Participant_Queries.ipynb",
+  "ok": true,
+  "notebook_sha256": "137251a1fe81e1fc82768658f42eafc7fcfa2b2da7c3c19b173f2a3aed9aca75",
+  "installation_cell_skipped_for_installed_artifact": true,
+  "recorded_metadata_at_utc": "2026-10-28T19:12:45.870117+00:00"
+}
