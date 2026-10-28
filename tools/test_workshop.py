@@ -71,3 +71,20 @@ def test_nifti_grid_check_detects_affine_mismatch(tmp_path,mismatch):
         'pd':pd,'Path':Path,'display':lambda *a:None}
     with redirect_stdout(io.StringIO()):exec(compile(tree,str(NOTEBOOK),'exec'),ns)
     assert bool(ns['same_grid']) is not mismatch
+
+
+def test_collection_results_display_categories_separately_from_types_and_formats():
+    observed = []
+    raw = pd.DataFrame([{'short_title':'EXAMPLE','dataset_type':'Collection',
+                         'download_data_types':'CT; Whole Slide Image','download_file_types':'DICOM; SVS'}])
+    described = raw.assign(data_categories=[['Radiology Images','Pathology Images']])
+    fake = SimpleNamespace(
+        search_datasets=lambda **k:SimpleNamespace(to_dataframe=lambda **k:raw),
+        describe_datasets=lambda rows:Result({'datasets':described.to_dict('records')},(),None,Completeness('complete')),
+    )
+    with redirect_stdout(io.StringIO()):
+        exec(source_containing('CANCER_LOCATION ='), {'tcia':fake,'display':observed.append})
+    table = observed[0]
+    assert table.loc[0,'data_categories']==['Radiology Images','Pathology Images']
+    assert table.loc[0,'download_data_types']=='CT; Whole Slide Image'
+    assert table.loc[0,'download_file_types']=='DICOM; SVS'

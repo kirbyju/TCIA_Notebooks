@@ -42,7 +42,7 @@ if INSTALL_FROM_PYPI:
             "-m",
             "pip",
             "install",
-            "tcia_utils[tables,downloads]==4.0.0a2",
+            "tcia_utils[tables,downloads]==4.0.0a3",
             "nibabel>=5,<6",
         ]
     )''', tags=['installation'])
@@ -102,22 +102,28 @@ datasets = tcia.search_datasets(
     modalities=[IMAGE_MODALITY],
     limit=100,
 ).to_dataframe(all_pages=True)
+datasets = tcia.describe_datasets(datasets).to_dataframe("datasets")
 print("Matching collections:", len(datasets))
 display(
     datasets.reindex(
         columns=[
             "short_title",
             "title",
+            "data_categories",
+            "download_data_types",
             "cancer_types",
             "cancer_locations",
             "resolved_access_level",
             "download_file_types",
+            "external_resource_labels",
             "tcia_page",
         ]
     )
 )''')
 
-md(r'''These are **collection-level** labels. Finding a collection with CT and a cancer label does not tell us that every participant has both. We'll check participant-level information in section 2.
+md(r'''The `data_categories` column tells us what kinds of downloadable data a collection publishes, such as radiology or pathology images. `download_data_types` shows modalities and other data types, while `download_file_types` shows formats. External resources, such as linked clinical information, stay in their own column.
+
+These are **collection-level** labels. Finding a collection with CT and a cancer label does not tell us that every participant has both. We'll check participant-level information in section 2.
 
 Now let's open CMB-GEC. The download table is especially useful: it tells us which files are public, which need approval, and which formats we'll receive.''')
 
@@ -197,13 +203,39 @@ else:
 
 md(r'''The **public non-DICOM group** contains original tissue-slide files and pathology metadata. The same Python function can request that group too.
 
-Some published packages need additional transfer tools. The SDK checks prerequisites before starting and reports what is missing. If those tools are unavailable in your environment, use the official collection download link shown below. A viewer copy is not a replacement for the original file, and downloading the DICOM group alone does not complete the collection.''')
+**One setup step for this group:** its original files need Aspera's transfer software in the same environment running Python. Installing `tcia_utils[downloads]` does not install this separate software. A browser's Aspera Connect installation on your computer is not automatically available to a Colab runtime.
+
+Use the setup section of our [existing package-download notebook](https://github.com/kirbyju/TCIA_Notebooks/blob/main/TCIA_Aspera_CLI_Downloads.ipynb), or the [official installation guide](https://github.com/IBM/aspera-cli#install). With a compatible Ruby installation (3.2+ for the current gem), the terminal commands are:
+
+```bash
+gem install aspera-cli
+ascli config transferd install
+ascli --version
+```
+
+In Colab, complete the setup in that runtime and rerun it after starting a new runtime. If the executable is installed outside `PATH`, set `PACKAGE_CLIENT` below to its full path. The check table tells us what is missing before we enable the large download. It does not download files or verify a network transfer.
+
+If that setup is not suitable for your environment, use the official collection download link below. A viewer copy is not a replacement for the original files, and downloading the DICOM group alone does not complete the collection.''')
 
 code(r'''DOWNLOAD_PUBLIC_NON_DICOM = False
+PACKAGE_CLIENT = "ascli"  # Or the full path to an existing ascli executable.
+pathology_ids = other_groups["download_id"].tolist()
+package_check = tcia.download_dataset(
+    DATASET,
+    OUTPUT / DATASET,
+    download_ids=pathology_ids,
+    package_client=PACKAGE_CLIENT,
+    dry_run=True,
+)
+display(
+    package_check.to_dataframe()[
+        ["download_category", "status", "message", "next_step", "documentation_url"]
+    ]
+)
 if DOWNLOAD_PUBLIC_NON_DICOM:
     try:
         report = tcia.download_dataset(
-            DATASET, OUTPUT / DATASET, download_ids=other_groups["download_id"].tolist()
+            DATASET, OUTPUT / DATASET, download_ids=pathology_ids, package_client=PACKAGE_CLIENT
         )
         display(report.to_dataframe())
     except DownloadError as error:
@@ -778,7 +810,7 @@ Useful links: [TCIA Dataset Explorer](https://www.cancerimagingarchive.net/datas
 notebook = nbf.v4.new_notebook(cells=cells, metadata={
     "kernelspec": {"display_name":"Python 3", "language":"python", "name":"python3"},
     "language_info": {"name":"python", "version":"3.11"},
-    "tcia_workshop": {"package_version":"4.0.0a2", "default_mode":"live_public_metadata",
+    "tcia_workshop": {"package_version":"4.0.0a3", "default_mode":"live_public_metadata",
         "payload_downloads_default":False, "audience":"junior data scientists"}})
 for i, cell in enumerate(notebook.cells): cell.id = f"tcia-workshop-{i:02d}"
 OUT.mkdir(exist_ok=True)

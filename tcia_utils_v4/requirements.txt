@@ -1,5 +1,5 @@
 # Install the reviewed preview wheel until this version is published.
-tcia_utils[tables,downloads]==4.0.0a2
+tcia_utils[tables,downloads]==4.0.0a3
 pandas>=2,<4
 nibabel>=5,<6
 # Maintainer execution tools; the lesson itself does not import these.

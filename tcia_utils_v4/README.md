@@ -12,7 +12,7 @@ segmentations in UCSF-PDGM and UPENN-GBM; and a controlled facial-CT/SEG subset
 from HEAD-NECK-RADIOMICS-HN1. It explains public versus controlled access and
 DICOM versus other file formats without teaching the hosting infrastructure.
 
-Use Python 3.11 or newer. The notebook explicitly installs the **4.0.0a2
+Use Python 3.11 or newer. The notebook explicitly installs the **4.0.0a3
 preview** of `tcia_utils` and its table/download dependencies. Ordinary pip installs
 continue to select the stable release; requesting this exact alpha is an opt-in.
 The stable 3.x package has a different API. Use a fresh session or environment
@@ -74,7 +74,7 @@ an installed preview wheel. The default CT/diagnosis query matched 17 participan
 records across CMB-GEC and CMB-LCA. The brain query linked 2,261 segmentation files
 to 1,106 participant records; the controlled example selected two CT/SEG files
 for one participant/study. These are indexed records, not unique-person totals
-or verified image/label reference pairs. Those historical checks tested the earlier notebook helpers. The current six notebook tests cover lesson structure, opt-in flags, exact participant/study matching, empty cohorts, and geometry comparison. SDK tests now cover page collection, clinical batching, manifest handling, download routing, authentication boundaries, and transfer failure accounting.
+or verified image/label reference pairs. Those historical checks tested the earlier notebook helpers. The current seven notebook tests cover lesson structure, opt-in flags, exact participant/study matching, empty cohorts, and geometry comparison. SDK tests now cover page collection, clinical batching, manifest handling, download routing, authentication boundaries, and transfer failure accounting.
 
 [Download coverage](validation/2026-10-25-download-coverage.json) records the
 251-series public DICOM manifest and the 30-row controlled CMB-GEC manifest.
@@ -87,3 +87,7 @@ explicitly skip the PyPI installation cell to keep testing the installed wheel;
 readers run the original installation cell to opt into the alpha.
 
 The October 28 revision removes prerelease background from the lesson, displays published download categories, and uses SDK helpers instead of custom notebook functions. Its [live metadata validation](validation/2026-10-28-live.json) and [recorded replay](validation/2026-10-28-fixture.json) exercise the installed 4.0.0a2 wheel. Imaging transfers stay off; controlled and original-package payload routes are covered by synthetic adapter tests, not live authorized transfers. HTTP reports distinguish available size/checksum verification from delegated engine completion.
+
+The 4.0.0a3 workshop shows collection-level data categories alongside modalities and file formats. The pathology example includes an explicit tool setup guide, a configurable executable path, and a metadata-only prerequisite check with actionable messages before the opt-in transfer. The current gem requires Ruby 3.2 or newer; see the linked installation guide for the runtime in use.
+
+The category/setup revision passed [live metadata execution](validation/2026-10-28-a3-live.json) and [recorded replay](validation/2026-10-28-a3-fixture.json) using the installed 4.0.0a3 wheel. Both runs kept payload transfers off.
