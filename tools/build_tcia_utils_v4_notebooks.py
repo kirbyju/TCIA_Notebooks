@@ -200,7 +200,11 @@ Let's start with the **public DICOM imaging group**. We already saved its manife
 
 This function accepts a **local path or an HTTPS URL**, for either a `.tcia` manifest or a supported CSV/TSV manifest. It reads the manifest's route column and chooses the appropriate download method. If part of the requested selection is unavailable, it tells us rather than silently dropping those files.
 
-Leave `DOWNLOAD_PUBLIC_DICOM = False` to keep exploring. Set it to `True` only when you're ready to download the full group and have checked the published size. A download report accounts for the selection; it does not verify which segmentation belongs to which source image.''')
+Before a large download, let's **try one item**. Passing `max_items=1` downloads the first whole DICOM series or file in the manifest. This is a real transfer, so it can help us check the setup and inspect the data. A whole series or file can still be large: this option limits the number of items, not the number of bytes.
+
+Leave `DOWNLOAD_PUBLIC_DICOM = False` to keep exploring without a transfer. If you enable it, the next cell downloads one DICOM series into a sample folder. The report shows how many items were selected and how many were available. These are the first items in the supplied order, so they may not represent every kind of data in the collection.
+
+After checking the sample, use a separate destination and omit `max_items` to request the full manifest. A successful sample does not establish that every remaining item is available or that an image and segmentation match.''')
 
 code(r'''DOWNLOAD_PUBLIC_DICOM = False
 public_manifest = next(
@@ -208,12 +212,16 @@ public_manifest = next(
 )
 
 if DOWNLOAD_PUBLIC_DICOM:
-    report = tcia.download_manifest(OUTPUT / public_manifest["manifest"], OUTPUT / DATASET)
+    report = tcia.download_manifest(
+        OUTPUT / public_manifest["manifest"], OUTPUT / "samples" / DATASET, max_items=1
+    )
     display(report.to_dataframe())
 else:
     print("Public DICOM download is off. Set DOWNLOAD_PUBLIC_DICOM = True when ready.")''', tags=['optional-download'])
 
 md(r'''The **public non-DICOM group** contains original tissue-slide files and pathology metadata. The same Python function can request that group too.
+
+This original package does not currently expose a supported file-level sample route through the SDK. The next cell checks setup without transferring data; enabling its download switch requests the **full package**. A `max_items` request for this route stops with an explanation instead. When a collection offers an indexed file inventory, we can pass a small selection to `download_files()` to try individual files.
 
 **One setup step for this group:** its original files need Aspera's transfer software in the same environment running Python. Installing `tcia_utils[downloads]` does not install this separate software. A browser's Aspera Connect installation on your computer is not automatically available to a Colab runtime.
 
@@ -266,7 +274,7 @@ md(r'''### Download the controlled group after approval
 
 For controlled images, the Python function also needs the **path** to your own JSON API key. It uses the official file identifiers and the authorized service. It does not print or copy the key. Don't paste key contents into a notebook, repository, or chat.
 
-Leave the next cell unchanged to continue without a controlled download. An approved user can enter a key-file path and set `DOWNLOAD_CONTROLLED_CMB = True`. Authorization for one study may not cover another.''')
+Leave the next cell unchanged to continue without a controlled download. An approved user can enter a key-file path and set `DOWNLOAD_CONTROLLED_CMB = True` to try the first file in the manifest. It still needs the same authorization as a larger download. Authorization for one study may not cover another.''')
 
 code(r'''CREDENTIAL_FILE = ""  # Path to your own approved JSON key file; never the key value.
 DOWNLOAD_CONTROLLED_CMB = False
@@ -275,8 +283,9 @@ controlled_manifest = next(item for item in saved_manifests if item["route_colum
 if DOWNLOAD_CONTROLLED_CMB:
     report = tcia.download_manifest(
         controlled_manifest["url"],  # A URL works just like a local manifest path.
-        OUTPUT / DATASET,
+        OUTPUT / "samples" / DATASET,
         credential_file=CREDENTIAL_FILE,
+        max_items=1,
     )
     display(report.to_dataframe())
 else:
@@ -286,7 +295,7 @@ md(r'''### Optional: use the TCIA Data Retriever instead
 
 You can keep using the [TCIA Data Retriever](https://github.com/TCIA/data-retriever/releases) with the saved manifests. This cell prints a CLI command for the public DICOM group. Run it in your terminal after setting the executable location as needed.
 
-The Python SDK can also invoke an installed Data Retriever by passing `backend="data_retriever"` to a download call. This is an alternative for supported manifests, rather than a requirement for the direct Python examples.''')
+The Python SDK can also invoke an installed Data Retriever by passing `backend="data_retriever"` to a download call. `max_items` also works with this backend: the SDK passes a smaller manifest to the CLI. The command printed below uses the original full manifest. This is an alternative for supported manifests, rather than a requirement for the direct Python examples.''')
 
 code(r'''RETRIEVER = "TCIA_Data_Retriever"
 command = tcia.data_retriever_command(
@@ -749,7 +758,7 @@ if len(face_cohort):
 else:
     print("No participant-study pair satisfied CT + SEG in this snapshot.")''')
 
-md(r'''An approved user can use `tcia.download_files()` to retrieve exactly the selected CT/SEG files. It does not add other scans or labels. Approval must cover **this** study as well.
+md(r'''An approved user can use `tcia.download_files()` to retrieve exactly the selected CT/SEG files. Here we keep both files with `max_items=2`, so the demo includes the selected scan and segmentation rather than cutting the pair in half. It does not add other scans or labels. Approval must cover **this** study as well.
 
 Keep `DOWNLOAD_CONTROLLED_CT = False` unless you're ready to retrieve the subset with your own key. To obtain the full imaging dataset instead, use `download_dataset()` with its imaging download ID from the table above. The small manifest we created is only our selected subset.''')
 
@@ -761,6 +770,7 @@ if DOWNLOAD_CONTROLLED_CT:
         face_selection,
         OUTPUT / FACE_COLLECTION / "selected-ct-seg",
         credential_file=CREDENTIAL_FILE,
+        max_items=2,
     )
     display(report.to_dataframe())
 else:

@@ -105,5 +105,15 @@ def test_manifest_examples_accept_local_path_and_url_without_notebook_parsing(tm
         exec(compile(ast.fix_missing_locations(public),str(NOTEBOOK),'exec'),ns)
         exec(compile(ast.fix_missing_locations(controlled),str(NOTEBOOK),'exec'),ns)
     assert calls[0][0][0]==tmp_path/'public.tcia'
+    assert calls[0][1]['max_items']==calls[1][1]['max_items']==1
     assert calls[1][0][0]=='https://example.org/controlled.csv'
     assert calls[1][1]['credential_file']=='approved-test-key.json'
+
+
+def test_demo_downloads_are_bounded_and_keep_controlled_scan_label_pair():
+    for marker, limit in [('DOWNLOAD_PUBLIC_DICOM =', 1), ('CREDENTIAL_FILE =', 1), ('DOWNLOAD_CONTROLLED_CT =', 2)]:
+        calls = [node for node in ast.walk(ast.parse(source_containing(marker)))
+                 if isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute)
+                 and node.func.attr in {'download_manifest', 'download_files'}]
+        assert len(calls) == 1
+        assert next(kw.value.value for kw in calls[0].keywords if kw.arg == 'max_items') == limit
