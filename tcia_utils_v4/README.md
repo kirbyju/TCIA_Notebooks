@@ -2,92 +2,55 @@
 
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/kirbyju/TCIA_Notebooks/blob/main/tcia_utils_v4/TCIA_Dataset_and_Participant_Queries.ipynb)
 
-Open [the workshop notebook](TCIA_Dataset_and_Participant_Queries.ipynb). It is a
-single, self-contained lesson for junior data scientists, written in the
-conversational style of the existing TCIA notebooks.
+The single workshop is written for junior data scientists. It covers CMB-GEC
+whole-dataset discovery and download planning, CT/diagnosis cohorts across CMB-GEC
+and CMB-LCA, public brain MR/NIfTI segmentation metadata, and controlled CT/SEG
+candidate selection. It explains public versus controlled access and DICOM versus
+other formats without teaching the hosting infrastructure.
 
-The lesson covers whole-dataset discovery and download planning with CMB-GEC;
-CT-plus-diagnosis cohorts across CMB-GEC and CMB-LCA; public brain MR and NIfTI
-segmentations in UCSF-PDGM and UPENN-GBM; and a controlled facial-CT/SEG subset
-from HEAD-NECK-RADIOMICS-HN1. It explains public versus controlled access and
-DICOM versus other file formats without teaching the hosting infrastructure.
+The workshop installs the 4.0.0a4 preview from PyPI in Python 3.11+. In Colab,
+run the installation cell, restart the runtime if prompted, and run from the top.
+The hosted REST service must include the shared download-plan and explicit public
+slide-file descriptors. Set TCIA_REST_BASE_URL for another updated service.
 
-Use Python 3.11 or newer. The notebook explicitly installs the **4.0.0a3
-preview** of `tcia_utils` and its table/download dependencies. Ordinary pip installs
-continue to select the stable release; requesting this exact alpha is an opt-in.
-The stable 3.x package has a different API. Use a fresh session or environment
-for testing.
+The download scope is Python and pip-installed dependencies. Public DICOM delegates
+to idc-index (including its pip-supplied transfer executable); public HTTPS and
+approved controlled files use Python HTTP streaming. No Data Retriever or Aspera
+CLI is installed or executed. External-only groups remain in metadata with their
+published software requirements, counts, and official links. Separate software
+notebooks cover those applications. Downloading a supported subset is not full
+collection acquisition.
 
-Click **Open In Colab** above and run the notebook from the top. In Jupyter,
-open the same file and run its installation cell. If dependencies are already
-installed, set `INSTALL_FROM_PYPI = False` to skip reinstallation. There is no
-learner-side helper, fixture dependency, repository clone, or LLM requirement.
-Single-file execution was checked in a local Jupyter kernel; a hosted Colab
-runtime has not been tested. Report errors at the
-[tcia_utils issue tracker](https://github.com/kirbyju/tcia_utils/issues), including
-the failing cell and your Python/package versions. Never include credentials.
+Download tables include patients/subjects, studies, series and images for each
+full group. Missing counts display as “Not reported”; CSVs keep missing values,
+and zero stays zero. Overlapping groups must not be summed as unique people.
 
-By default, the notebook makes real public metadata queries and saves small
-manifests and tables. All image transfers remain opt-in. Controlled transfers
-require the reader's own approval and JSON key-file path. The notebook never
-ships a credential or accepts a policy on the reader's behalf.
+Five image-transfer switches stay off by default. Public DICOM and controlled
+manifest demos use max_items=1; the CT/SEG candidate demo keeps one file of each
+modality with max_items=2. These limits count whole series/files, not bytes.
+Preparation status appears before index loading; the same client reuses the index.
+progress=False silences status messages and the public DICOM transfer bar.
 
-## Current workflow limits
+Controlled transfers require the reader's approved JSON key-file path. No key
+contents appear in the notebook, reports or metadata service. Python currently
+uses a narrow httpx-based CRDC authorization adapter, not a general DRS client.
+HTTP downloads check available sizes/checksums and restart rather than resume
+interrupted files. Exact CT/SEG references and image quality need checking after
+authorized transfer. Indexed paths inside archives are not per-file download URLs.
 
-- Python downloads use `tcia.download_dataset()` or `tcia.download_files()`. Public DICOM reuses `idc-index`, HTTPS files stream directly, and controlled files use the supported authorization API with the reader's approved key file. The notebook includes Data Retriever as an optional alternative.
-- Original tissue-slide packages need separately installed/configured [Aspera CLI](https://github.com/IBM/aspera-cli) and IBM transfer tools. The SDK invokes these tools behind the same Python method; pip alone does not install them. The official download link remains available. Missing requirements stop the selection before payload transfers, and reports keep every selected group visible. DICOM-only transfers do not download the whole collection.
-- Indexed NIfTI file paths are not per-file download URLs. Use the published
-  package links. For the inspected files the service exposes geometry status,
-  while detailed dimensions/spacing are empty. An optional local header check
-  compares a documented image/mask pair after download.
-- Public clinical enrichment is incomplete. Source evidence, inferred values,
-  unmatched participant IDs, route caps, and dataset-scoped identity remain
-  explicit. The API does not imply access to restricted clinical records.
-- A same-participant/study CT+SEG match does not verify the exact DICOM source
-  references or the segment names. Check those after an authorized download.
+Maintainer checks use tools/test_workshop.py and tools/run_tcia_workshop.py.
+Fixture mode preserves the public recording's original observation time and
+fingerprint. Local shared-plan projections are explicitly marked; they do not
+establish a deployed API or current research result. See validation/ for historical
+checks. Validation prohibits credentials and imaging payloads. The recorded replay
+skips installation and exercises an installed wheel with all transfers disabled.
 
-## Maintainer validation
-
-`tools/build_tcia_utils_v4_notebooks.py` regenerates the notebook. Readers do
-not need that script or the validation files. The five earlier draft tutorials
-were replaced by this one lesson; dated 2026-10-15 reports describe those
-superseded drafts only.
-
-Run against an installed candidate wheel:
-
-```bash
-python tools/run_tcia_workshop.py --mode fixture
-python tools/run_tcia_workshop.py --mode live --report /tmp/workshop-live.json
-```
-
-Fixture mode replays the compressed **recording of public metadata**, labels it
-as recorded rather than live, and rejects unrecorded HTTP requests. The recording
-is for regression tests, not a current research result. Live validation allows
-only the metadata API and the small official manifest URLs used in the lesson.
-Both modes explicitly skip the tagged PyPI installation cell to preserve the installed artifact under test, block transfer subprocesses, and require nonempty examples. Use
-`--mode record` deliberately to refresh the recording after reviewing metadata
-changes; this is separate from publishing or updating the live service.
-
-The [live execution](validation/2026-10-25-live.json) and
-[offline replay](validation/2026-10-25-fixtures.json) passed on Python 3.13 using
-an installed preview wheel. The default CT/diagnosis query matched 17 participant
-records across CMB-GEC and CMB-LCA. The brain query linked 2,261 segmentation files
-to 1,106 participant records; the controlled example selected two CT/SEG files
-for one participant/study. These are indexed records, not unique-person totals
-or verified image/label reference pairs. Those historical checks tested the earlier notebook helpers. The current seven notebook tests cover lesson structure, opt-in flags, exact participant/study matching, empty cohorts, and geometry comparison. SDK tests now cover page collection, clinical batching, manifest handling, download routing, authentication boundaries, and transfer failure accounting.
-
-[Download coverage](validation/2026-10-25-download-coverage.json) records the
-251-series public DICOM manifest and the 30-row controlled CMB-GEC manifest.
-All 251 public series identifiers appear in the Data Retriever's checked
-main-branch index. No released CLI binary or image payload transfer was tested.
-
-The release-ready notebook also passed [October 27 live metadata validation](validation/2026-10-27-release-live.json)
-and [offline replay](validation/2026-10-27-release-fixture.json). Those checks
-explicitly skip the PyPI installation cell to keep testing the installed wheel;
-readers run the original installation cell to opt into the alpha.
-
-The October 28 revision removes prerelease background from the lesson, displays published download categories, and uses SDK helpers instead of custom notebook functions. Its [live metadata validation](validation/2026-10-28-live.json) and [recorded replay](validation/2026-10-28-fixture.json) exercise the installed 4.0.0a2 wheel. Imaging transfers stay off; controlled and original-package payload routes are covered by synthetic adapter tests, not live authorized transfers. HTTP reports distinguish available size/checksum verification from delegated engine completion.
-
-The 4.0.0a3 workshop shows collection-level data categories alongside modalities and file formats. The pathology example includes an explicit tool setup guide, a configurable executable path, and a metadata-only prerequisite check with actionable messages before the opt-in transfer. The current gem requires Ruby 3.2 or newer; see the linked installation guide for the runtime in use.
-
-The category/setup revision passed [live metadata execution](validation/2026-10-28-a3-live.json) and [recorded replay](validation/2026-10-28-a3-fixture.json) using the installed 4.0.0a3 wheel. Both runs kept payload transfers off.
+The clinical section now ends with two CMB-LCA cohort downloads.
+`plan_participant_images()` inventories public CT series or non-DICOM slide files
+for exactly the clinically filtered participants; `download_images(..., max_items=1)`
+uses the existing Python adapters for a small opt-in transfer. Coverage includes
+zero-match participants and unresolved routes block execution. Public slide copies
+may be reformatted; they are not asserted equivalent to submitted originals.
+The new explicit slide descriptors require the matching local API changes.
+The added recording is bound to the same TCIA fingerprint as the earlier fixture,
+with a separately identified bundled-IDC metadata subset and observation time.

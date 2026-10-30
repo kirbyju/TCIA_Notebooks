@@ -28,10 +28,24 @@ from pathlib import Path as _Path
 from urllib.parse import urlsplit as _split
 import httpx as _httpx
 import subprocess as _subprocess
+from types import SimpleNamespace as _SimpleNamespace
 _mode = MODE_VALUE
 _cassette_path = _Path(CASSETTE_VALUE)
 _capture = _json.loads(_gzip.decompress(_cassette_path.read_bytes())) if _mode == 'fixture' else {'requests': {}}
 _original_send = _httpx.Client.send
+_original_check_call = _subprocess.check_call
+_original_popen = _subprocess.Popen
+if _mode == 'fixture':
+    import pandas as _pd, idc_index as _idc
+    _idc_fixture = _json.loads(_gzip.decompress(_cassette_path.with_name('cohort-public-dicom.json.gz').read_bytes()))
+    def _forbid_idc_transfer(**kwargs):
+        raise AssertionError('Metadata validation forbids image transfers.')
+    _idc.IDCClient = lambda: _SimpleNamespace(
+        index=_pd.DataFrame(_idc_fixture['rows']),
+        get_idc_version=lambda: _idc_fixture['idc_version'],
+        download_dicom_series=_forbid_idc_transfer)
+
+_seen_requests = set()
 
 def _request_key(request):
     return _json.dumps([request.method, str(request.url), request.content.decode()], separators=(',', ':'))
@@ -45,6 +59,7 @@ def _send_metadata(self, request, **kwargs):
     if not allowed or request.headers.get('authorization'):
         raise AssertionError('Validation forbids payloads, credentials, and unexpected HTTP routes.')
     key = _request_key(request)
+    _seen_requests.add(key)
     if _mode == 'fixture':
         if key not in _capture['requests']:
             raise AssertionError('Unrecorded metadata request: ' + request.method + ' ' + url.path)
@@ -65,38 +80,55 @@ _httpx.Client.send = _send_metadata
 def _forbid_transfer(*args, **kwargs):
     raise AssertionError('Payload commands must remain off during notebook validation.')
 _subprocess.run = _forbid_transfer
-_subprocess.check_call = _forbid_transfer
+def _is_help(command):
+    return isinstance(command,(list,tuple)) and len(command)==2 and _Path(command[0]).name in {'s5cmd','s5cmd.exe'} and command[1]=='--help'
+def _metadata_check_call(command,*args,**kwargs):
+    if _is_help(command):return _original_check_call(command,*args,**kwargs)
+    return _forbid_transfer()
+def _metadata_popen(command,*args,**kwargs):
+    if _is_help(command):return _original_popen(command,*args,**kwargs)
+    return _forbid_transfer()
+_subprocess.check_call = _metadata_check_call
+_subprocess.Popen = _metadata_popen
 print('RECORDED PUBLIC METADATA - not a live query' if _mode == 'fixture' else 'LIVE PUBLIC METADATA - no image transfers')
 '''
 
 POSTLUDE = r'''
 assert not INSTALL_FROM_PYPI
-assert not DOWNLOAD_PUBLIC_DICOM and not DOWNLOAD_PUBLIC_NON_DICOM and not DOWNLOAD_CONTROLLED_CMB and not DOWNLOAD_CONTROLLED_CT
+assert not DOWNLOAD_PUBLIC_DICOM and not DOWNLOAD_CONTROLLED_CMB and not DOWNLOAD_CONTROLLED_CT
+assert not DOWNLOAD_CLINICAL_CT and not DOWNLOAD_CLINICAL_SLIDES
 assert not SOURCE_NIFTI and not MASK_NIFTI
 assert len(cohort) > 0 and len(brain_cohort) > 0 and len(face_selection) > 0
 assert cohort['short_title'].nunique() >= 2, 'Default cohort must actually span datasets.'
 assert {'CT', 'SEG'}.issubset(set(face_selection['modality']))
 assert set(face_selection['access_level']) == {'controlled'}
-assert len(download_plan) == len(retriever_groups) + len(other_groups)
-assert len(other_groups) > 0, 'Reassess the original-package example if current routing has changed.'
+assert len(download_plan) == len(python_groups) + len(external_groups)
+assert len(external_groups) > 0, 'Reassess the original-package example if current routing has changed.'
 assert set(pd.read_csv(face_manifest).columns) == {'drs_uri'}
 assert len(pd.read_csv(face_manifest)) == face_selection['drs_uri'].nunique()
 assert participant_assets.shape[0] > 0 and len(example_facts) > 0
 assert len(brain_files) > 0
+assert len(ct_images.rows) > 0 and len(slide_images.rows) > 0
+assert not ct_images.unresolved and not slide_images.unresolved
+assert {r['participant_id'] for r in ct_images.rows}.issubset(set(clinical_image_participants.display_participant_id))
+assert {r['participant_id'] for r in slide_images.rows}.issubset(set(clinical_image_participants.display_participant_id))
 if _mode == 'record':
     _capture['observed_at_utc'] = datetime.now(timezone.utc).isoformat()
     _capture['fingerprint'] = SNAPSHOT
     _cassette_path.parent.mkdir(parents=True, exist_ok=True)
     _cassette_path.write_bytes(_gzip.compress(_json.dumps(_capture, separators=(',', ':')).encode(), mtime=0))
 _report = {'fingerprint': SNAPSHOT, 'dataset_groups': len(download_plan),
-    'cli_groups': len(retriever_groups), 'original_package_groups': len(other_groups),
+    'python_download_groups': len(python_groups), 'external_download_groups': len(external_groups), 'manifest_download_groups': len(manifest_groups),
     'candidate_participant_records': len(candidates), 'matched_participant_records': len(cohort),
     'matched_collections': sorted(cohort['short_title'].unique().tolist()),
     'resolved_clinical_values': len(clinical_summary), 'example_clinical_facts': len(example_facts),
     'brain_participant_records': int(brain_cohort['participant_key'].nunique()),
     'brain_segmentation_files': len(brain_cohort), 'brain_example_files': len(brain_files),
     'controlled_ct_seg_studies': len(face_cohort), 'controlled_selected_files': len(face_selection),
-    'unique_http_requests': len(_capture['requests']), 'payload_transfers': 0,
+    'unique_http_requests': len(_seen_requests), 'payload_transfers': 0,
+    'clinical_ct_series':len(ct_images.rows),'clinical_slide_files':len(slide_images.rows),
+    'clinical_ct_index_version':ct_images.scope['imaging_index_version'],
+    'cohort_download_extension':_capture.get('cohort_download_extension'),
     'package_version': version('tcia_utils'), 'python': sys.version.split()[0]}
 _Path(REPORT_VALUE).write_text(_json.dumps(_report, indent=2))
 '''
@@ -161,6 +193,7 @@ def main():
                          'installation_cell_skipped_for_installed_artifact': True})
         if args.mode == 'fixture':
             findings['recorded_metadata_at_utc'] = json.loads(gzip.decompress(cassette.read_bytes()))['observed_at_utc']
+            findings['local_contract_projection'] = json.loads(gzip.decompress(cassette.read_bytes())).get('local_contract_projection')
         if args.report:
             args.report.parent.mkdir(parents=True, exist_ok=True)
             args.report.write_text(json.dumps(findings, indent=2) + '\n')
