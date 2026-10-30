@@ -32,6 +32,7 @@ _mode = MODE_VALUE
 _cassette_path = _Path(CASSETTE_VALUE)
 _capture = _json.loads(_gzip.decompress(_cassette_path.read_bytes())) if _mode == 'fixture' else {'requests': {}}
 _original_send = _httpx.Client.send
+_seen_requests = set()
 
 def _request_key(request):
     return _json.dumps([request.method, str(request.url), request.content.decode()], separators=(',', ':'))
@@ -45,6 +46,7 @@ def _send_metadata(self, request, **kwargs):
     if not allowed or request.headers.get('authorization'):
         raise AssertionError('Validation forbids payloads, credentials, and unexpected HTTP routes.')
     key = _request_key(request)
+    _seen_requests.add(key)
     if _mode == 'fixture':
         if key not in _capture['requests']:
             raise AssertionError('Unrecorded metadata request: ' + request.method + ' ' + url.path)
@@ -96,7 +98,7 @@ _report = {'fingerprint': SNAPSHOT, 'dataset_groups': len(download_plan),
     'brain_participant_records': int(brain_cohort['participant_key'].nunique()),
     'brain_segmentation_files': len(brain_cohort), 'brain_example_files': len(brain_files),
     'controlled_ct_seg_studies': len(face_cohort), 'controlled_selected_files': len(face_selection),
-    'unique_http_requests': len(_capture['requests']), 'payload_transfers': 0,
+    'unique_http_requests': len(_seen_requests), 'payload_transfers': 0,
     'package_version': version('tcia_utils'), 'python': sys.version.split()[0]}
 _Path(REPORT_VALUE).write_text(_json.dumps(_report, indent=2))
 '''
@@ -161,6 +163,7 @@ def main():
                          'installation_cell_skipped_for_installed_artifact': True})
         if args.mode == 'fixture':
             findings['recorded_metadata_at_utc'] = json.loads(gzip.decompress(cassette.read_bytes()))['observed_at_utc']
+            findings['local_contract_projection'] = json.loads(gzip.decompress(cassette.read_bytes())).get('local_contract_projection')
         if args.report:
             args.report.parent.mkdir(parents=True, exist_ok=True)
             args.report.write_text(json.dumps(findings, indent=2) + '\n')

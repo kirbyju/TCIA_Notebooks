@@ -12,20 +12,17 @@ segmentations in UCSF-PDGM and UPENN-GBM; and a controlled facial-CT/SEG subset
 from HEAD-NECK-RADIOMICS-HN1. It explains public versus controlled access and
 DICOM versus other file formats without teaching the hosting infrastructure.
 
-Use Python 3.11 or newer. The notebook explicitly installs the **4.0.0a3
-preview** of `tcia_utils` and its table/download dependencies. Ordinary pip installs
-continue to select the stable release; requesting this exact alpha is an opt-in.
-The stable 3.x package has a different API. Use a fresh session or environment
-for testing.
+This local review revision needs the **unpublished 4.0.0a4.dev0 wheel** and the
+shared download-plan API changes from the query-skill worktree. Nothing in this
+revision has been published to PyPI or deployed. The current public Colab notebook
+still uses 4.0.0a3. Use the supplied wheel path in the installation cell, or install
+that wheel into a fresh Python 3.11+ environment first. Set `TCIA_REST_BASE_URL`
+when testing against an updated local/staging service.
 
-Click **Open In Colab** above and run the notebook from the top. In Jupyter,
-open the same file and run its installation cell. If dependencies are already
-installed, set `INSTALL_FROM_PYPI = False` to skip reinstallation. There is no
-learner-side helper, fixture dependency, repository clone, or LLM requirement.
-Single-file execution was checked in a local Jupyter kernel; a hosted Colab
-runtime has not been tested. Report errors at the
-[tcia_utils issue tracker](https://github.com/kirbyju/tcia_utils/issues), including
-the failing cell and your Python/package versions. Never include credentials.
+The lesson now reads `data_categories` directly from collection search and displays
+the shared plan's `download_requirements`. Its public DICOM example passes a local
+manifest to `download_manifest()`, and the controlled example passes a URL to the
+same method. No learner-defined parsing or routing function is needed.
 
 By default, the notebook makes real public metadata queries and saves small
 manifests and tables. All image transfers remain opt-in. Controlled transfers
@@ -91,3 +88,17 @@ The October 28 revision removes prerelease background from the lesson, displays 
 The 4.0.0a3 workshop shows collection-level data categories alongside modalities and file formats. The pathology example includes an explicit tool setup guide, a configurable executable path, and a metadata-only prerequisite check with actionable messages before the opt-in transfer. The current gem requires Ruby 3.2 or newer; see the linked installation guide for the runtime in use.
 
 The category/setup revision passed [live metadata execution](validation/2026-10-28-a3-live.json) and [recorded replay](validation/2026-10-28-a3-fixture.json) using the installed 4.0.0a3 wheel. Both runs kept payload transfers off.
+
+## Unpublished shared-contract validation
+
+The fixture recording retains its original observation time and release fingerprint.
+`tools/project_shared_download_fixture.py --skill-source /path/to/query-skill`
+adds locally projected plan responses using that worktree's shared resolver and
+records its source hashes. These are **not** responses from an updated deployed
+service. Fixture execution is a local regression check, not a live research result.
+
+All imaging switches remain off. The review build's checks exercise synthetic
+transfers and fake credentials in the SDK; no controlled or original-package
+payload was retrieved. Installation from a review wheel replaces the temporary
+review setup; normal published-version setup will be restored during release
+preparation after notebook review is complete.

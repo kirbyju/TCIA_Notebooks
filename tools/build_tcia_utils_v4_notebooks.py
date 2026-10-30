@@ -32,9 +32,10 @@ Run the next cell to install the packages used in this lab. In Colab, run the no
 
 `pandas` helps us work with tables, and `nibabel` is used by the optional NIfTI header check. Download support is included, but querying the metadata does not download any images.''')
 
-code(r'''INSTALL_FROM_PYPI = True  # Install the dependencies used by this notebook.
-if INSTALL_FROM_PYPI:
+code(r'''TCIA_UTILS_WHEEL = ""  # Path to the supplied workshop wheel, if not already installed.
+if TCIA_UTILS_WHEEL:
     import subprocess, sys
+    from pathlib import Path
 
     subprocess.check_call(
         [
@@ -42,7 +43,7 @@ if INSTALL_FROM_PYPI:
             "-m",
             "pip",
             "install",
-            "tcia_utils[tables,downloads]==4.0.0a3",
+            f"{Path(TCIA_UTILS_WHEEL).expanduser().resolve()}[tables,downloads]",
             "nibabel>=5,<6",
         ]
     )''', tags=['installation'])
@@ -62,11 +63,14 @@ import pandas as pd
 from IPython.display import display, Markdown
 from tcia_utils import TCIAClient, DownloadError
 
-assert version("tcia_utils").startswith("4."), "Please run the installation cell first."
+assert hasattr(
+    TCIAClient, "download_manifest"
+), "Install the supplied workshop wheel, then restart Python and run from the top."
 pd.set_option("display.max_colwidth", 85)
 OUTPUT = Path(os.environ.get("TCIA_EXAMPLE_OUTPUT_DIR", "tcia-workshop-output"))
 OUTPUT.mkdir(parents=True, exist_ok=True)
-tcia = TCIAClient(base_url="https://tcia.duckdns.org", timeout=120, pin_snapshot=True)
+BASE_URL = os.environ.get("TCIA_REST_BASE_URL", "https://tcia.duckdns.org")
+tcia = TCIAClient(base_url=BASE_URL, timeout=120, pin_snapshot=True)
 status = tcia.status()
 SNAPSHOT = status.provenance.release_fingerprint
 print("tcia_utils:", version("tcia_utils"))
@@ -102,7 +106,6 @@ datasets = tcia.search_datasets(
     modalities=[IMAGE_MODALITY],
     limit=100,
 ).to_dataframe(all_pages=True)
-datasets = tcia.describe_datasets(datasets).to_dataframe("datasets")
 print("Matching collections:", len(datasets))
 display(
     datasets.reindex(
@@ -145,6 +148,7 @@ display(
             "download_id",
             "download_title",
             "download_category",
+            "download_requirements",
             "access_level",
             "data_types",
             "file_types",
@@ -159,14 +163,21 @@ downloads.to_csv(OUTPUT / "CMB-GEC_download_inventory.csv", index=False)''')
 
 md(r'''CMB-GEC is a good reminder that **a dataset is not always one download**. Its download categories distinguish radiology images, tissue-slide images, clinical tables, and other supporting files. Access and file format are separate attributes.
 
-The package can prepare a download plan from these records. Our Python download function chooses the appropriate transfer route for each group. We can also save manifests for the TCIA Data Retriever. A manifest is a shopping list; it does not contain the images or grant access to controlled files.''')
+The download plan includes a `download_requirements` column, such as **Requires TCIA Data Retriever** or **Requires Aspera**. These software requirements are separate from access approval. The labels describe the collection's published download instructions. For supported manifests, you can use `tcia_utils` directly below without operating a separate downloader. Some original-file packages still need additional transfer software. Our Python download function chooses the appropriate transfer route for each group. We can also save manifests for the TCIA Data Retriever. A manifest is a shopping list; it does not contain the images or grant access to controlled files.''')
 
 code(r'''download_plan = downloads
 retriever_groups = download_plan[download_plan["data_retriever_supported"]]
 other_groups = download_plan[~download_plan["data_retriever_supported"]]
 display(
     download_plan[
-        ["download_id", "download_title", "download_category", "access_level", "file_types"]
+        [
+            "download_id",
+            "download_title",
+            "download_category",
+            "download_requirements",
+            "access_level",
+            "file_types",
+        ]
     ]
 )
 print("Selected download groups:", len(download_plan))
@@ -185,18 +196,19 @@ display(manifest_report.to_dataframe())''')
 
 md(r'''### Download directly from Python
 
-Let's start with the **public DICOM imaging group**. `download_dataset()` uses the download IDs already listed in our plan, so we know exactly which part of the collection we are requesting. The package handles manifest parsing, the imaging client, and the transfer report.
+Let's start with the **public DICOM imaging group**. We already saved its manifest, so we can pass that file straight to `tcia.download_manifest()`. The package reads the identifiers and handles the transfer; we do not need to parse the file ourselves.
+
+This function accepts a **local path or an HTTPS URL**, for either a `.tcia` manifest or a supported CSV/TSV manifest. It reads the manifest's route column and chooses the appropriate download method. If part of the requested selection is unavailable, it tells us rather than silently dropping those files.
 
 Leave `DOWNLOAD_PUBLIC_DICOM = False` to keep exploring. Set it to `True` only when you're ready to download the full group and have checked the published size. A download report accounts for the selection; it does not verify which segmentation belongs to which source image.''')
 
 code(r'''DOWNLOAD_PUBLIC_DICOM = False
-public_dicom_ids = download_plan.loc[
-    download_plan["python_route"].eq("public_dicom") & ~download_plan["controlled_access"],
-    "download_id",
-].tolist()
+public_manifest = next(
+    item for item in saved_manifests if item["route_column"] == "SeriesInstanceUID"
+)
 
 if DOWNLOAD_PUBLIC_DICOM:
-    report = tcia.download_dataset(DATASET, OUTPUT / DATASET, download_ids=public_dicom_ids)
+    report = tcia.download_manifest(OUTPUT / public_manifest["manifest"], OUTPUT / DATASET)
     display(report.to_dataframe())
 else:
     print("Public DICOM download is off. Set DOWNLOAD_PUBLIC_DICOM = True when ready.")''', tags=['optional-download'])
@@ -258,14 +270,12 @@ Leave the next cell unchanged to continue without a controlled download. An appr
 
 code(r'''CREDENTIAL_FILE = ""  # Path to your own approved JSON key file; never the key value.
 DOWNLOAD_CONTROLLED_CMB = False
+controlled_manifest = next(item for item in saved_manifests if item["route_column"] == "drs_uri")
 
 if DOWNLOAD_CONTROLLED_CMB:
-    report = tcia.download_dataset(
-        DATASET,
+    report = tcia.download_manifest(
+        controlled_manifest["url"],  # A URL works just like a local manifest path.
         OUTPUT / DATASET,
-        download_ids=retriever_groups.loc[
-            retriever_groups["controlled_access"], "download_id"
-        ].tolist(),
         credential_file=CREDENTIAL_FILE,
     )
     display(report.to_dataframe())
@@ -279,9 +289,6 @@ You can keep using the [TCIA Data Retriever](https://github.com/TCIA/data-retrie
 The Python SDK can also invoke an installed Data Retriever by passing `backend="data_retriever"` to a download call. This is an alternative for supported manifests, rather than a requirement for the direct Python examples.''')
 
 code(r'''RETRIEVER = "TCIA_Data_Retriever"
-public_manifest = next(
-    item for item in saved_manifests if item["route_column"] == "SeriesInstanceUID"
-)
 command = tcia.data_retriever_command(
     OUTPUT / public_manifest["manifest"], OUTPUT / DATASET / "public-dicom", executable=RETRIEVER
 )
@@ -613,6 +620,7 @@ display(
             "short_title",
             "download_title",
             "download_category",
+            "download_requirements",
             "file_types",
             "license_label",
             "download_size",
@@ -677,6 +685,7 @@ display(
             "download_id",
             "download_title",
             "download_category",
+            "download_requirements",
             "access_level",
             "data_types",
             "license_label",
@@ -810,7 +819,7 @@ Useful links: [TCIA Dataset Explorer](https://www.cancerimagingarchive.net/datas
 notebook = nbf.v4.new_notebook(cells=cells, metadata={
     "kernelspec": {"display_name":"Python 3", "language":"python", "name":"python3"},
     "language_info": {"name":"python", "version":"3.11"},
-    "tcia_workshop": {"package_version":"4.0.0a3", "default_mode":"live_public_metadata",
+    "tcia_workshop": {"package_version":"4.0.0a4.dev0", "default_mode":"live_public_metadata",
         "payload_downloads_default":False, "audience":"junior data scientists"}})
 for i, cell in enumerate(notebook.cells): cell.id = f"tcia-workshop-{i:02d}"
 OUT.mkdir(exist_ok=True)

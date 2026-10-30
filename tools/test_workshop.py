@@ -79,8 +79,7 @@ def test_collection_results_display_categories_separately_from_types_and_formats
                          'download_data_types':'CT; Whole Slide Image','download_file_types':'DICOM; SVS'}])
     described = raw.assign(data_categories=[['Radiology Images','Pathology Images']])
     fake = SimpleNamespace(
-        search_datasets=lambda **k:SimpleNamespace(to_dataframe=lambda **k:raw),
-        describe_datasets=lambda rows:Result({'datasets':described.to_dict('records')},(),None,Completeness('complete')),
+        search_datasets=lambda **k:SimpleNamespace(to_dataframe=lambda **k:described),
     )
     with redirect_stdout(io.StringIO()):
         exec(source_containing('CANCER_LOCATION ='), {'tcia':fake,'display':observed.append})
@@ -88,3 +87,23 @@ def test_collection_results_display_categories_separately_from_types_and_formats
     assert table.loc[0,'data_categories']==['Radiology Images','Pathology Images']
     assert table.loc[0,'download_data_types']=='CT; Whole Slide Image'
     assert table.loc[0,'download_file_types']=='DICOM; SVS'
+
+
+def test_manifest_examples_accept_local_path_and_url_without_notebook_parsing(tmp_path):
+    calls=[]
+    fake=SimpleNamespace(download_manifest=lambda *args,**kwargs:
+        calls.append((args,kwargs)) or SimpleNamespace(to_dataframe=lambda:pd.DataFrame()))
+    saved=[{'route_column':'SeriesInstanceUID','manifest':'public.tcia'},
+           {'route_column':'drs_uri','manifest':'controlled.csv','url':'https://example.org/controlled.csv'}]
+    ns={'tcia':fake,'saved_manifests':saved,'OUTPUT':tmp_path,'DATASET':'EXAMPLE','display':lambda *a:None}
+    public=ast.parse(source_containing('DOWNLOAD_PUBLIC_DICOM ='))
+    public.body[0].value=ast.Constant(True)
+    controlled=ast.parse(source_containing('CREDENTIAL_FILE ='))
+    controlled.body[0].value=ast.Constant('approved-test-key.json')
+    controlled.body[1].value=ast.Constant(True)
+    with redirect_stdout(io.StringIO()):
+        exec(compile(ast.fix_missing_locations(public),str(NOTEBOOK),'exec'),ns)
+        exec(compile(ast.fix_missing_locations(controlled),str(NOTEBOOK),'exec'),ns)
+    assert calls[0][0][0]==tmp_path/'public.tcia'
+    assert calls[1][0][0]=='https://example.org/controlled.csv'
+    assert calls[1][1]['credential_file']=='approved-test-key.json'
