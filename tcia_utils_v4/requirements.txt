@@ -1,8 +1,6 @@
-# Install the supplied tcia_utils review wheel with [tables,downloads] separately.
-# This notebook revision requires the unpublished 4.0.0a4.dev0 code and shared-plan API.
-pandas>=2,<4
+tcia_utils[tables,downloads]==4.0.0a4
 nibabel>=5,<6
-# Maintainer execution tools; the lesson itself does not import these.
+# Maintainer-only notebook validation dependencies.
 nbformat>=5,<6
 nbclient>=0.11,<1
 ipykernel>=7,<8

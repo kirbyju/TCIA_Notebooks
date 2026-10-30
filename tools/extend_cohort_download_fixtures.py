@@ -30,7 +30,7 @@ with httpx.Client(timeout=90,follow_redirects=True) as client:
     downloads=fetch('https://tcia.duckdns.org/v2/datasets/CMB-LCA/downloads',{'limit':100}).json()
     assert not downloads['has_more']
     assets=fetch('https://tcia.duckdns.org/v2/public-non-dicom/assets',
-                 {'short_titles':['CMB-LCA'],'modalities':['Whole Slide Image'],'limit':500}).json()
+                 {'short_titles':['CMB-LCA'],'modalities':['Whole Slide Image'],'requires_annotations':False,'limit':500}).json()
     assert not assets['has_more'],'Extend recording to every cursor before using this fixture'
     manifest=next(r for r in detail['current_downloads'] if r['access_level']=='open' and r['download_url'].endswith('.tcia'))
     content=fetch(manifest['download_url']).content

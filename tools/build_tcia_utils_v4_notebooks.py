@@ -32,21 +32,10 @@ Run the next cell to install the packages used in this lab. In Colab, run the no
 
 `pandas` helps us work with tables, and `nibabel` is used by the optional NIfTI header check. Download support is included, but querying the metadata does not download any images.''')
 
-code(r'''TCIA_UTILS_WHEEL = ""  # Path to the supplied workshop wheel, if not already installed.
-if TCIA_UTILS_WHEEL:
-    import subprocess, sys
-    from pathlib import Path
-
-    subprocess.check_call(
-        [
-            sys.executable,
-            "-m",
-            "pip",
-            "install",
-            f"{Path(TCIA_UTILS_WHEEL).expanduser().resolve()}[tables,downloads]",
-            "nibabel>=5,<6",
-        ]
-    )''', tags=['installation'])
+code(r'''import subprocess, sys
+subprocess.check_call(
+    [sys.executable, "-m", "pip", "install", "tcia_utils[tables,downloads]==4.0.0a4", "nibabel>=5,<6"]
+)''', tags=['installation'])
 
 code(r'''from pathlib import Path
 from importlib.metadata import version
@@ -865,7 +854,7 @@ Useful links: [TCIA Dataset Explorer](https://www.cancerimagingarchive.net/datas
 notebook = nbf.v4.new_notebook(cells=cells, metadata={
     "kernelspec": {"display_name":"Python 3", "language":"python", "name":"python3"},
     "language_info": {"name":"python", "version":"3.11"},
-    "tcia_workshop": {"package_version":"4.0.0a4.dev0", "default_mode":"live_public_metadata",
+    "tcia_workshop": {"package_version":"4.0.0a4", "default_mode":"live_public_metadata",
         "payload_downloads_default":False, "audience":"junior data scientists"}})
 for i, cell in enumerate(notebook.cells): cell.id = f"tcia-workshop-{i:02d}"
 OUT.mkdir(exist_ok=True)

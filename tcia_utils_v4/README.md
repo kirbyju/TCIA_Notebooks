@@ -8,11 +8,10 @@ and CMB-LCA, public brain MR/NIfTI segmentation metadata, and controlled CT/SEG
 candidate selection. It explains public versus controlled access and DICOM versus
 other formats without teaching the hosting infrastructure.
 
-This local revision needs the unpublished 4.0.0a4.dev0 review wheel and matching
-shared-plan API. Nothing has been published or deployed. The public Colab notebook
-still uses 4.0.0a3. Supply the wheel path in the installation cell, or install the
-wheel and examples dependencies in Python 3.11+. Use TCIA_REST_BASE_URL for an
-updated local/staging service. Publication remains a separate step after review.
+The workshop installs the 4.0.0a4 preview from PyPI in Python 3.11+. In Colab,
+run the installation cell, restart the runtime if prompted, and run from the top.
+The hosted REST service must include the shared download-plan and explicit public
+slide-file descriptors. Set TCIA_REST_BASE_URL for another updated service.
 
 The download scope is Python and pip-installed dependencies. Public DICOM delegates
 to idc-index (including its pip-supplied transfer executable); public HTTPS and
