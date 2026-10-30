@@ -50,9 +50,10 @@ import pandas as pd
 from IPython.display import display, Markdown
 from tcia_utils import TCIAClient, DownloadError
 
-assert hasattr(
-    TCIAClient, "download_manifest"
-), "Install the supplied workshop wheel, then restart Python and run from the top."
+assert all(
+    hasattr(TCIAClient, method)
+    for method in ("download_manifest", "plan_participant_images", "download_images")
+), "Run the installation cell for tcia_utils 4.0.0a4, restart your Python/Colab runtime, then run from the top."
 pd.set_option("display.max_colwidth", 85)
 OUTPUT = Path(os.environ.get("TCIA_EXAMPLE_OUTPUT_DIR", "tcia-workshop-output"))
 OUTPUT.mkdir(parents=True, exist_ok=True)
