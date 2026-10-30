@@ -55,8 +55,6 @@ from urllib.parse import urlsplit
 import hashlib
 import json
 import os
-import shlex
-import subprocess
 
 import httpx
 import pandas as pd
@@ -149,6 +147,11 @@ display(
             "download_title",
             "download_category",
             "download_requirements",
+            "python_supported",
+            "subjects",
+            "studies",
+            "series",
+            "images",
             "access_level",
             "data_types",
             "file_types",
@@ -157,32 +160,42 @@ display(
             "download_size_unit",
             "download_url",
         ]
-    )
+    ).convert_dtypes().astype(object).fillna("Not reported")
 )
 downloads.to_csv(OUTPUT / "CMB-GEC_download_inventory.csv", index=False)''')
 
 md(r'''CMB-GEC is a good reminder that **a dataset is not always one download**. Its download categories distinguish radiology images, tissue-slide images, clinical tables, and other supporting files. Access and file format are separate attributes.
 
-The download plan includes a `download_requirements` column, such as **Requires TCIA Data Retriever** or **Requires Aspera**. These software requirements are separate from access approval. The labels describe the collection's published download instructions. For supported manifests, you can use `tcia_utils` directly below without operating a separate downloader. Some original-file packages still need additional transfer software. Our Python download function chooses the appropriate transfer route for each group. We can also save manifests for the TCIA Data Retriever. A manifest is a shopping list; it does not contain the images or grant access to controlled files.''')
+The download tables also show **patients/subjects, studies, series, and images** using the published `subjects`, `studies`, `series`, and `images` fields. These counts describe each **full download group**, not the small sample we'll try later. “Not reported” means the count is unavailable; it does not mean zero. Some counts do not apply to non-DICOM data. Groups can overlap, so adding their counts does not establish a total number of unique patients.
+
+The download plan includes a `download_requirements` column describing the published download instructions. `python_supported` tells us which groups this package can transfer using Python and pip-installed dependencies. These are separate from access approval: controlled files still require your approved key. Groups needing another application remain in the inventory with their official links, but this notebook does not install or run those applications. A manifest is a shopping list; it does not contain the images or grant access to controlled files.''')
 
 code(r'''download_plan = downloads
-retriever_groups = download_plan[download_plan["data_retriever_supported"]]
-other_groups = download_plan[~download_plan["data_retriever_supported"]]
+python_groups = download_plan[download_plan["python_supported"]]
+external_groups = download_plan[~download_plan["python_supported"]]
+manifest_groups = python_groups[
+    python_groups["download_method"].isin(["dicom_manifest", "tabular_manifest"])
+]
 display(
-    download_plan[
-        [
+    download_plan.reindex(
+        columns=[
             "download_id",
             "download_title",
             "download_category",
             "download_requirements",
+            "python_supported",
+            "subjects",
+            "studies",
+            "series",
+            "images",
             "access_level",
             "file_types",
         ]
-    ]
+    ).convert_dtypes().astype(object).fillna("Not reported")
 )
 print("Selected download groups:", len(download_plan))
-print("Groups with Data Retriever manifests:", len(retriever_groups))
-print("Other published download groups:", len(other_groups))''')
+print("Groups supported by Python:", len(python_groups))
+print("Groups requiring an external download route:", len(external_groups))''')
 
 md(r'''### Save the manifests, then choose whether to download
 
@@ -190,13 +203,13 @@ The next cell uses `tcia.save_manifests()` to save the small official manifest f
 
 **Controlled access:** the classification in the table comes from the download's license metadata. Public descriptions and manifests are not authorization. Read the [current TCIA access policy](https://www.cancerimagingarchive.net/nih-controlled-data-access-policy/), request the required dbGaP authorization, and create your own JSON API key using the linked instructions. For CMB-GEC's controlled images the policy identifies **phs002192**. You can still save and inspect the public manifest without that key.''')
 
-code(r'''manifest_report = tcia.save_manifests(retriever_groups, OUTPUT)
+code(r'''manifest_report = tcia.save_manifests(manifest_groups, OUTPUT)
 saved_manifests = manifest_report.records
 display(manifest_report.to_dataframe())''')
 
 md(r'''### Download directly from Python
 
-Let's start with the **public DICOM imaging group**. We already saved its manifest, so we can pass that file straight to `tcia.download_manifest()`. The package reads the identifiers and handles the transfer; we do not need to parse the file ourselves.
+Let's start with the **public DICOM imaging group**. We already saved its manifest, so we can pass that file straight to `tcia.download_manifest()`. The package reads the identifiers and handles the transfer; we do not need to parse the file ourselves. It prints “Preparing download selection…” immediately. The first public DICOM call prepares its imaging index; later calls through the same `tcia` client reuse it. File-transfer progress follows preparation. Use `progress=False` if you want to suppress these progress messages and the transfer bar.
 
 This function accepts a **local path or an HTTPS URL**, for either a `.tcia` manifest or a supported CSV/TSV manifest. It reads the manifest's route column and chooses the appropriate download method. If part of the requested selection is unavailable, it tells us rather than silently dropping those files.
 
@@ -219,56 +232,11 @@ if DOWNLOAD_PUBLIC_DICOM:
 else:
     print("Public DICOM download is off. Set DOWNLOAD_PUBLIC_DICOM = True when ready.")''', tags=['optional-download'])
 
-md(r'''The **public non-DICOM group** contains original tissue-slide files and pathology metadata. The same Python function can request that group too.
+md(r'''### Groups requiring another application
 
-This original package does not currently expose a supported file-level sample route through the SDK. The next cell checks setup without transferring data; enabling its download switch requests the **full package**. A `max_items` request for this route stops with an explanation instead. When a collection offers an indexed file inventory, we can pass a small selection to `download_files()` to try individual files.
+The tissue-slide group in CMB-GEC needs a separate transfer application, so it stays outside this notebook's Python downloads. Its counts, published requirements, and official link remain in the inventory above. Follow that link or use our [separate package-download notebook](https://github.com/kirbyju/TCIA_Notebooks/blob/main/TCIA_Aspera_CLI_Downloads.ipynb) when you need those original files.
 
-**One setup step for this group:** its original files need Aspera's transfer software in the same environment running Python. Installing `tcia_utils[downloads]` does not install this separate software. A browser's Aspera Connect installation on your computer is not automatically available to a Colab runtime.
-
-Use the setup section of our [existing package-download notebook](https://github.com/kirbyju/TCIA_Notebooks/blob/main/TCIA_Aspera_CLI_Downloads.ipynb), or the [official installation guide](https://github.com/IBM/aspera-cli#install). With a compatible Ruby installation (3.2+ for the current gem), the terminal commands are:
-
-```bash
-gem install aspera-cli
-ascli config transferd install
-ascli --version
-```
-
-In Colab, complete the setup in that runtime and rerun it after starting a new runtime. If the executable is installed outside `PATH`, set `PACKAGE_CLIENT` below to its full path. The check table tells us what is missing before we enable the large download. It does not download files or verify a network transfer.
-
-If that setup is not suitable for your environment, use the official collection download link below. A viewer copy is not a replacement for the original files, and downloading the DICOM group alone does not complete the collection.''')
-
-code(r'''DOWNLOAD_PUBLIC_NON_DICOM = False
-PACKAGE_CLIENT = "ascli"  # Or the full path to an existing ascli executable.
-pathology_ids = other_groups["download_id"].tolist()
-package_check = tcia.download_dataset(
-    DATASET,
-    OUTPUT / DATASET,
-    download_ids=pathology_ids,
-    package_client=PACKAGE_CLIENT,
-    dry_run=True,
-)
-display(
-    package_check.to_dataframe()[
-        ["download_category", "status", "message", "next_step", "documentation_url"]
-    ]
-)
-if DOWNLOAD_PUBLIC_NON_DICOM:
-    try:
-        report = tcia.download_dataset(
-            DATASET, OUTPUT / DATASET, download_ids=pathology_ids, package_client=PACKAGE_CLIENT
-        )
-        display(report.to_dataframe())
-    except DownloadError as error:
-        print(error)
-        if error.report:
-            display(error.report.to_dataframe())
-
-for row in other_groups.to_dict("records"):
-    display(
-        Markdown(
-            f"- [{row['download_title']}]({row['download_url']}) — {row['download_size']} {row['download_size_unit']}, {row['access_level']}"
-        )
-    )''')
+Other collections may offer non-DICOM files through Python-supported manifests or HTTPS links. Use `python_supported` to check each group. Downloading only the Python-supported groups does **not** mean we have downloaded the entire collection.''')
 
 md(r'''### Download the controlled group after approval
 
@@ -291,19 +259,7 @@ if DOWNLOAD_CONTROLLED_CMB:
 else:
     print("Controlled CMB-GEC download is off. Public manifests are ready for an approved user.")''', tags=['optional-download'])
 
-md(r'''### Optional: use the TCIA Data Retriever instead
-
-You can keep using the [TCIA Data Retriever](https://github.com/TCIA/data-retriever/releases) with the saved manifests. This cell prints a CLI command for the public DICOM group. Run it in your terminal after setting the executable location as needed.
-
-The Python SDK can also invoke an installed Data Retriever by passing `backend="data_retriever"` to a download call. `max_items` also works with this backend: the SDK passes a smaller manifest to the CLI. The command printed below uses the original full manifest. This is an alternative for supported manifests, rather than a requirement for the direct Python examples.''')
-
-code(r'''RETRIEVER = "TCIA_Data_Retriever"
-command = tcia.data_retriever_command(
-    OUTPUT / public_manifest["manifest"], OUTPUT / DATASET / "public-dicom", executable=RETRIEVER
-)
-print(shlex.join(command))''')
-
-md(r'''Before calling a dataset download complete, compare your downloaded files and the SDK or Data Retriever completion report with **every row** in the inventory. Resolve failed or skipped files, finish the tissue-slide package, and follow the collection's external-resource links if your project needs those data too. A manifest on disk or a successful metadata query is not evidence that images were transferred.
+md(r'''Before calling a dataset download complete, compare your downloaded files and the SDK completion report with **every row** in the inventory. Resolve failed or skipped files, follow the separate download route for the tissue-slide group, and follow the collection's external-resource links if your project needs those data too. A manifest on disk or a successful metadata query is not evidence that images were transferred.
 
 Let's save the dataset citation as well. Keep the citation and license information with your project, and follow the collection page's acknowledgement instructions.''')
 
@@ -615,9 +571,9 @@ if len(brain_cohort):
 else:
     print("No indexed masks matched these filters in this snapshot.")''')
 
-md(r'''To obtain these NIfTI files, choose the published package for the collection. The table below includes its download category, link, license, and size. You can pass its `download_id` to `tcia.download_dataset()` in the same way as the earlier examples.
+md(r'''To obtain these NIfTI files, choose the published package for the collection. The table below includes its download category, link, license, and size. For groups marked `python_supported`, pass their `download_id` to `tcia.download_dataset()`. For other groups, follow the official download link; this package does not install or invoke a separate application.
 
-An indexed path inside an archive is not a standalone download URL. The package downloader retrieves the published package; it does not invent per-file links. Extract the files and choose a documented matching image/mask pair before using the optional header check below.''')
+An indexed path inside an archive is not a standalone download URL. A Python-supported route retrieves the published files; it does not invent per-file links. Groups requiring a separate application stay outside this download demo. Extract the files and choose a documented matching image/mask pair before using the optional header check below.''')
 
 code(r'''brain_downloads = pd.concat(
     [tcia.plan_downloads(title).to_dataframe() for title in BRAIN_COLLECTIONS],
@@ -630,13 +586,18 @@ display(
             "download_title",
             "download_category",
             "download_requirements",
+            "python_supported",
+            "subjects",
+            "studies",
+            "series",
+            "images",
             "file_types",
             "license_label",
             "download_size",
             "download_size_unit",
             "download_url",
         ]
-    )
+    ).convert_dtypes().astype(object).fillna("Not reported")
 )
 brain_downloads.to_csv(OUTPUT / "brain_dataset_downloads.csv", index=False)''')
 
@@ -695,12 +656,17 @@ display(
             "download_title",
             "download_category",
             "download_requirements",
+            "python_supported",
+            "subjects",
+            "studies",
+            "series",
+            "images",
             "access_level",
             "data_types",
             "license_label",
             "download_url",
         ]
-    )
+    ).convert_dtypes().astype(object).fillna("Not reported")
 )
 face_result = tcia.list_controlled_files(FACE_COLLECTION, limit=500)
 if face_result.data["count"] == face_result.data["limit"]:
@@ -725,7 +691,7 @@ face_cohort.to_json(OUTPUT / "controlled_ct_seg_cohort.json", orient="records", 
 
 md(r'''CT and SEG appearing in the same study is stronger evidence than a collection-level “has segmentations” label. It still does not verify the exact referenced CT series or the segment names inside a SEG object. After an authorized download, check those DICOM references and labels before using the pair for training.
 
-Let's prepare a **one-participant example** with one candidate CT file and one candidate SEG file from the same study. We choose one of each modality before applying the two-file limit, so two CT files cannot crowd out the segmentation. The exact image/label references still need checking after download. We'll write the CT and SEG file identifiers already provided by the official metadata. The manifest will contain just one `drs_uri` column, which the Data Retriever accepts. We'll save the fuller metadata separately so we can trace every selected file.''')
+Let's prepare a **one-participant example** with one candidate CT file and one candidate SEG file from the same study. We choose one of each modality before applying the two-file limit, so two CT files cannot crowd out the segmentation. The exact image/label references still need checking after download. We'll write the CT and SEG file identifiers already provided by the official metadata. The manifest will contain just one `drs_uri` column, which `download_manifest()` accepts. We'll save the fuller metadata separately so we can trace every selected file.''')
 
 code(r'''face_selection = pd.DataFrame()
 face_manifest = None
@@ -800,7 +766,7 @@ code(r'''run_record = {
     },
     "dataset_download_groups": len(download_plan),
     "saved_manifests": saved_manifests,
-    "original_package_download_ids": other_groups["download_id"].tolist(),
+    "external_download_ids": external_groups["download_id"].tolist(),
     "candidate_records": len(candidates),
     "matching_records": len(cohort),
     "brain_collections": BRAIN_COLLECTIONS,
@@ -828,7 +794,7 @@ Change `COHORT_COLLECTIONS`, `COHORT_MODALITY`, and `DIAGNOSIS_TEXT`, then rerun
 
 For another challenge, change `BRAIN_COLLECTIONS` and compare how many participants have segmentation files with checked versus unchecked geometry. Keep both categories visible until you've decided what your project actually requires.
 
-Useful links: [TCIA Dataset Explorer](https://www.cancerimagingarchive.net/dataset-explorer/), [CMB-GEC](https://www.cancerimagingarchive.net/collection/cmb-gec/), [UCSF-PDGM](https://www.cancerimagingarchive.net/collection/ucsf-pdgm/), [UPENN-GBM](https://www.cancerimagingarchive.net/collection/upenn-gbm/), [HEAD-NECK-RADIOMICS-HN1](https://www.cancerimagingarchive.net/collection/head-neck-radiomics-hn1/), [controlled-access instructions](https://www.cancerimagingarchive.net/nih-controlled-data-access-policy/), and [TCIA Data Retriever](https://github.com/TCIA/data-retriever).''')
+Useful links: [TCIA Dataset Explorer](https://www.cancerimagingarchive.net/dataset-explorer/), [CMB-GEC](https://www.cancerimagingarchive.net/collection/cmb-gec/), [UCSF-PDGM](https://www.cancerimagingarchive.net/collection/ucsf-pdgm/), [UPENN-GBM](https://www.cancerimagingarchive.net/collection/upenn-gbm/), [HEAD-NECK-RADIOMICS-HN1](https://www.cancerimagingarchive.net/collection/head-neck-radiomics-hn1/), [controlled-access instructions](https://www.cancerimagingarchive.net/nih-controlled-data-access-policy/).''')
 
 notebook = nbf.v4.new_notebook(cells=cells, metadata={
     "kernelspec": {"display_name":"Python 3", "language":"python", "name":"python3"},

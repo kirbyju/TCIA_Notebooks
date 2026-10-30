@@ -27,7 +27,7 @@ def test_lesson_has_no_custom_helpers_or_prerelease_tutorial():
 
 
 def test_all_imaging_transfers_remain_opt_in():
-    for flag in ['DOWNLOAD_PUBLIC_DICOM','DOWNLOAD_PUBLIC_NON_DICOM','DOWNLOAD_CONTROLLED_CMB','DOWNLOAD_CONTROLLED_CT']:
+    for flag in ['DOWNLOAD_PUBLIC_DICOM','DOWNLOAD_CONTROLLED_CMB','DOWNLOAD_CONTROLLED_CT']:
         source=source_containing(flag+' =')
         assert any(isinstance(node,ast.Assign) and any(isinstance(target,ast.Name) and target.id==flag for target in node.targets)
                    and isinstance(node.value,ast.Constant) and node.value.value is False for node in ast.parse(source).body)
@@ -130,3 +130,42 @@ def test_sample_pair_keeps_one_ct_and_one_seg_when_study_has_many_series(tmp_pat
     with redirect_stdout(io.StringIO()):exec(source_containing('face_selection = pd.DataFrame()'),ns)
     assert ns['face_selection'].modality.tolist()==['CT','SEG']
     assert len(pd.read_csv(ns['face_manifest']))==2
+
+
+def test_download_tables_show_published_counts_without_turning_missing_into_zero(tmp_path):
+    from IPython.display import Markdown
+    observed=[]
+    rows=pd.DataFrame([
+        {'download_id':'1','download_title':'Imaging','download_category':'Radiology Images',
+         'download_requirements':'Example','python_supported':True,'download_method':'dicom_manifest',
+         'subjects':12,'studies':15,'series':0,'images':100},
+        {'download_id':'2','download_title':'Other','download_category':'Pathology Images',
+         'download_requirements':'Example','python_supported':False,'download_method':'aspera_package',
+         'subjects':None,'studies':None,'series':None,'images':None},
+    ])
+    collection={'dataset_type':'Collection','short_title':'EXAMPLE','tcia_page':'https://example.org',
+                'title':'Example','current_version_number':'1','has_external_clinical_resource':False}
+    fake=SimpleNamespace(get_dataset=lambda *a:SimpleNamespace(data={'datasets':[collection]}),
+        plan_downloads=lambda *a:SimpleNamespace(to_dataframe=lambda:rows))
+    ns={'pd':pd,'tcia':fake,'display':observed.append,'Markdown':Markdown,'OUTPUT':tmp_path}
+    with redirect_stdout(io.StringIO()):
+        exec(source_containing('DATASET = "CMB-GEC"'),ns)
+        exec(source_containing('download_plan = downloads'),ns)
+    tables=[v for v in observed if isinstance(v,pd.DataFrame)]
+    for table in tables:
+        assert table.loc[0,['subjects','studies','series','images']].tolist()==[12,15,0,100]
+        assert table.loc[1,['subjects','studies','series','images']].tolist()==['Not reported']*4
+    exported=pd.read_csv(tmp_path/'CMB-GEC_download_inventory.csv')
+    assert pd.isna(exported.loc[1,'subjects']) and exported.loc[0,'series']==0
+    # The other dataset download tables use the same published fields.
+    for marker in ['brain_downloads = pd.concat','FACE_COLLECTION =']:
+        source=source_containing(marker)
+        for name in ['subjects','studies','series','images']:
+            assert f'"{name}"' in source
+
+
+def test_notebook_does_not_install_or_invoke_external_download_applications():
+    text=NOTEBOOK.read_text()
+    for forbidden in ['data_retriever_command','backend=','ascli','gem install','PACKAGE_CLIENT','DOWNLOAD_PUBLIC_NON_DICOM']:
+        assert forbidden not in text
+    assert 'python_supported' in text
