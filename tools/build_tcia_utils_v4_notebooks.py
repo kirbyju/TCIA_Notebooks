@@ -725,7 +725,7 @@ face_cohort.to_json(OUTPUT / "controlled_ct_seg_cohort.json", orient="records", 
 
 md(r'''CT and SEG appearing in the same study is stronger evidence than a collection-level “has segmentations” label. It still does not verify the exact referenced CT series or the segment names inside a SEG object. After an authorized download, check those DICOM references and labels before using the pair for training.
 
-Let's prepare a **one-participant example**, rather than download the entire controlled collection. We'll write the CT and SEG file identifiers already provided by the official metadata. The manifest will contain just one `drs_uri` column, which the Data Retriever accepts. We'll save the fuller metadata separately so we can trace every selected file.''')
+Let's prepare a **one-participant example** with one candidate CT file and one candidate SEG file from the same study. We choose one of each modality before applying the two-file limit, so two CT files cannot crowd out the segmentation. The exact image/label references still need checking after download. We'll write the CT and SEG file identifiers already provided by the official metadata. The manifest will contain just one `drs_uri` column, which the Data Retriever accepts. We'll save the fuller metadata separately so we can trace every selected file.''')
 
 code(r'''face_selection = pd.DataFrame()
 face_manifest = None
@@ -738,6 +738,10 @@ if len(face_cohort):
     ].copy()
     if face_selection["drs_uri"].isna().any() or face_selection["drs_uri"].eq("").any():
         raise ValueError("A selected file has no download identifier; no partial manifest written.")
+    # Keep one candidate CT file and one candidate SEG file from this study.
+    face_selection = face_selection.sort_values(
+        ["modality", "series_instance_uid", "drs_uri"]
+    ).drop_duplicates("modality").copy()
     face_manifest = OUTPUT / "controlled_ct_and_seg.csv"
     face_selection[["drs_uri"]].drop_duplicates().to_csv(face_manifest, index=False)
     face_selection.to_json(

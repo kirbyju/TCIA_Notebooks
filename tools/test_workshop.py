@@ -117,3 +117,16 @@ def test_demo_downloads_are_bounded_and_keep_controlled_scan_label_pair():
                  and node.func.attr in {'download_manifest', 'download_files'}]
         assert len(calls) == 1
         assert next(kw.value.value for kw in calls[0].keywords if kw.arg == 'max_items') == limit
+
+
+def test_sample_pair_keeps_one_ct_and_one_seg_when_study_has_many_series(tmp_path):
+    usable=pd.DataFrame([
+        {'short_title':'EXAMPLE','participant_id':'P','study_instance_uid':'S',
+         'modality':modality,'series_instance_uid':f'1.2.{i}',
+         'drs_uri':f'drs://example/{i}','file_size_bytes':4,'file_name':f'{i}.zip'}
+        for i,modality in enumerate(['CT','CT','CT','SEG','SEG'])])
+    ns={'pd':pd,'usable':usable,'face_cohort':pd.DataFrame([{'participant_id':'P','study_instance_uid':'S'}]),
+        'OUTPUT':tmp_path,'display':lambda *a:None}
+    with redirect_stdout(io.StringIO()):exec(source_containing('face_selection = pd.DataFrame()'),ns)
+    assert ns['face_selection'].modality.tolist()==['CT','SEG']
+    assert len(pd.read_csv(ns['face_manifest']))==2

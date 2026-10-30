@@ -71,7 +71,7 @@ an installed preview wheel. The default CT/diagnosis query matched 17 participan
 records across CMB-GEC and CMB-LCA. The brain query linked 2,261 segmentation files
 to 1,106 participant records; the controlled example selected two CT/SEG files
 for one participant/study. These are indexed records, not unique-person totals
-or verified image/label reference pairs. Those historical checks tested the earlier notebook helpers. The current nine notebook tests cover lesson structure, opt-in flags, exact participant/study matching, empty cohorts, and geometry comparison. SDK tests now cover page collection, clinical batching, manifest handling, download routing, authentication boundaries, and transfer failure accounting.
+or verified image/label reference pairs. Those historical checks tested the earlier notebook helpers. The current ten notebook tests cover lesson structure, opt-in flags, exact participant/study matching, empty cohorts, and geometry comparison. SDK tests now cover page collection, clinical batching, manifest handling, download routing, authentication boundaries, and transfer failure accounting.
 
 [Download coverage](validation/2026-10-25-download-coverage.json) records the
 251-series public DICOM manifest and the 30-row controlled CMB-GEC manifest.
