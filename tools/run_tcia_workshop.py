@@ -28,10 +28,23 @@ from pathlib import Path as _Path
 from urllib.parse import urlsplit as _split
 import httpx as _httpx
 import subprocess as _subprocess
+from types import SimpleNamespace as _SimpleNamespace
 _mode = MODE_VALUE
 _cassette_path = _Path(CASSETTE_VALUE)
 _capture = _json.loads(_gzip.decompress(_cassette_path.read_bytes())) if _mode == 'fixture' else {'requests': {}}
 _original_send = _httpx.Client.send
+_original_check_call = _subprocess.check_call
+_original_popen = _subprocess.Popen
+if _mode == 'fixture':
+    import pandas as _pd, idc_index as _idc
+    _idc_fixture = _json.loads(_gzip.decompress(_cassette_path.with_name('cohort-public-dicom.json.gz').read_bytes()))
+    def _forbid_idc_transfer(**kwargs):
+        raise AssertionError('Metadata validation forbids image transfers.')
+    _idc.IDCClient = lambda: _SimpleNamespace(
+        index=_pd.DataFrame(_idc_fixture['rows']),
+        get_idc_version=lambda: _idc_fixture['idc_version'],
+        download_dicom_series=_forbid_idc_transfer)
+
 _seen_requests = set()
 
 def _request_key(request):
@@ -67,13 +80,23 @@ _httpx.Client.send = _send_metadata
 def _forbid_transfer(*args, **kwargs):
     raise AssertionError('Payload commands must remain off during notebook validation.')
 _subprocess.run = _forbid_transfer
-_subprocess.check_call = _forbid_transfer
+def _is_help(command):
+    return isinstance(command,(list,tuple)) and len(command)==2 and _Path(command[0]).name in {'s5cmd','s5cmd.exe'} and command[1]=='--help'
+def _metadata_check_call(command,*args,**kwargs):
+    if _is_help(command):return _original_check_call(command,*args,**kwargs)
+    return _forbid_transfer()
+def _metadata_popen(command,*args,**kwargs):
+    if _is_help(command):return _original_popen(command,*args,**kwargs)
+    return _forbid_transfer()
+_subprocess.check_call = _metadata_check_call
+_subprocess.Popen = _metadata_popen
 print('RECORDED PUBLIC METADATA - not a live query' if _mode == 'fixture' else 'LIVE PUBLIC METADATA - no image transfers')
 '''
 
 POSTLUDE = r'''
 assert not INSTALL_FROM_PYPI
 assert not DOWNLOAD_PUBLIC_DICOM and not DOWNLOAD_CONTROLLED_CMB and not DOWNLOAD_CONTROLLED_CT
+assert not DOWNLOAD_CLINICAL_CT and not DOWNLOAD_CLINICAL_SLIDES
 assert not SOURCE_NIFTI and not MASK_NIFTI
 assert len(cohort) > 0 and len(brain_cohort) > 0 and len(face_selection) > 0
 assert cohort['short_title'].nunique() >= 2, 'Default cohort must actually span datasets.'
@@ -85,6 +108,10 @@ assert set(pd.read_csv(face_manifest).columns) == {'drs_uri'}
 assert len(pd.read_csv(face_manifest)) == face_selection['drs_uri'].nunique()
 assert participant_assets.shape[0] > 0 and len(example_facts) > 0
 assert len(brain_files) > 0
+assert len(ct_images.rows) > 0 and len(slide_images.rows) > 0
+assert not ct_images.unresolved and not slide_images.unresolved
+assert {r['participant_id'] for r in ct_images.rows}.issubset(set(clinical_image_participants.display_participant_id))
+assert {r['participant_id'] for r in slide_images.rows}.issubset(set(clinical_image_participants.display_participant_id))
 if _mode == 'record':
     _capture['observed_at_utc'] = datetime.now(timezone.utc).isoformat()
     _capture['fingerprint'] = SNAPSHOT
@@ -99,6 +126,9 @@ _report = {'fingerprint': SNAPSHOT, 'dataset_groups': len(download_plan),
     'brain_segmentation_files': len(brain_cohort), 'brain_example_files': len(brain_files),
     'controlled_ct_seg_studies': len(face_cohort), 'controlled_selected_files': len(face_selection),
     'unique_http_requests': len(_seen_requests), 'payload_transfers': 0,
+    'clinical_ct_series':len(ct_images.rows),'clinical_slide_files':len(slide_images.rows),
+    'clinical_ct_index_version':ct_images.scope['imaging_index_version'],
+    'cohort_download_extension':_capture.get('cohort_download_extension'),
     'package_version': version('tcia_utils'), 'python': sys.version.split()[0]}
 _Path(REPORT_VALUE).write_text(_json.dumps(_report, indent=2))
 '''

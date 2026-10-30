@@ -26,7 +26,7 @@ Download tables include patients/subjects, studies, series and images for each
 full group. Missing counts display as “Not reported”; CSVs keep missing values,
 and zero stays zero. Overlapping groups must not be summed as unique people.
 
-Three image-transfer switches stay off by default. Public DICOM and controlled
+Five image-transfer switches stay off by default. Public DICOM and controlled
 manifest demos use max_items=1; the CT/SEG candidate demo keeps one file of each
 modality with max_items=2. These limits count whole series/files, not bytes.
 Preparation status appears before index loading; the same client reuses the index.
@@ -45,3 +45,13 @@ fingerprint. Local shared-plan projections are explicitly marked; they do not
 establish a deployed API or current research result. See validation/ for historical
 checks. Validation prohibits credentials and imaging payloads. The recorded replay
 skips installation and exercises an installed wheel with all transfers disabled.
+
+The clinical section now ends with two CMB-LCA cohort downloads.
+`plan_participant_images()` inventories public CT series or non-DICOM slide files
+for exactly the clinically filtered participants; `download_images(..., max_items=1)`
+uses the existing Python adapters for a small opt-in transfer. Coverage includes
+zero-match participants and unresolved routes block execution. Public slide copies
+may be reformatted; they are not asserted equivalent to submitted originals.
+The new explicit slide descriptors require the matching local API changes.
+The added recording is bound to the same TCIA fingerprint as the earlier fixture,
+with a separately identified bundled-IDC metadata subset and observation time.

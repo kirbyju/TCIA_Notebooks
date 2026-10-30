@@ -27,7 +27,7 @@ def test_lesson_has_no_custom_helpers_or_prerelease_tutorial():
 
 
 def test_all_imaging_transfers_remain_opt_in():
-    for flag in ['DOWNLOAD_PUBLIC_DICOM','DOWNLOAD_CONTROLLED_CMB','DOWNLOAD_CONTROLLED_CT']:
+    for flag in ['DOWNLOAD_PUBLIC_DICOM','DOWNLOAD_CONTROLLED_CMB','DOWNLOAD_CONTROLLED_CT','DOWNLOAD_CLINICAL_CT','DOWNLOAD_CLINICAL_SLIDES']:
         source=source_containing(flag+' =')
         assert any(isinstance(node,ast.Assign) and any(isinstance(target,ast.Name) and target.id==flag for target in node.targets)
                    and isinstance(node.value,ast.Constant) and node.value.value is False for node in ast.parse(source).body)
@@ -111,10 +111,10 @@ def test_manifest_examples_accept_local_path_and_url_without_notebook_parsing(tm
 
 
 def test_demo_downloads_are_bounded_and_keep_controlled_scan_label_pair():
-    for marker, limit in [('DOWNLOAD_PUBLIC_DICOM =', 1), ('CREDENTIAL_FILE =', 1), ('DOWNLOAD_CONTROLLED_CT =', 2)]:
+    for marker, limit in [('DOWNLOAD_PUBLIC_DICOM =', 1), ('CREDENTIAL_FILE =', 1), ('DOWNLOAD_CONTROLLED_CT =', 2), ('DOWNLOAD_CLINICAL_CT =',1), ('DOWNLOAD_CLINICAL_SLIDES =',1)]:
         calls = [node for node in ast.walk(ast.parse(source_containing(marker)))
                  if isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute)
-                 and node.func.attr in {'download_manifest', 'download_files'}]
+                 and node.func.attr in {'download_manifest', 'download_files', 'download_images'}]
         assert len(calls) == 1
         assert next(kw.value.value for kw in calls[0].keywords if kw.arg == 'max_items') == limit
 
@@ -169,3 +169,54 @@ def test_notebook_does_not_install_or_invoke_external_download_applications():
     for forbidden in ['data_retriever_command','backend=','ascli','gem install','PACKAGE_CLIENT','DOWNLOAD_PUBLIC_NON_DICOM']:
         assert forbidden not in text
     assert 'python_supported' in text
+
+
+@pytest.mark.parametrize('include_inferred,expected', [(True,['reported','inferred','unknown']), (False,['reported'])])
+def test_diagnosis_control_is_next_to_filter_and_export_retains_row_provenance(tmp_path,include_inferred,expected):
+    rows=[]
+    for name,inferred,diagnosis in [('reported',False,'Carcinoma'),('inferred',True,'Carcinoma'),
+                                     ('unknown',None,'Carcinoma'),('other',False,'Other diagnosis')]:
+        rows.append({'short_title':'EXAMPLE','display_participant_id':name,
+                     'primary_diagnosis':diagnosis,'primary_diagnosis_is_inferred':inferred,
+                     'resolved_values':{},'resolved_sources':{},'conflicts':[]})
+    tree=ast.parse(source_containing('matches ='))
+    assert isinstance(tree.body[0],ast.Assign)
+    assert tree.body[0].targets[0].id=='INCLUDE_INFERRED_DIAGNOSES'
+    tree.body[0].value=ast.Constant(include_inferred)
+    ns={'pd':pd,'with_clinical':pd.DataFrame(rows),'DIAGNOSIS_TEXT':'carcinoma',
+        'OUTPUT':tmp_path,'display':lambda *a:None}
+    with redirect_stdout(io.StringIO()):exec(compile(ast.fix_missing_locations(tree),str(NOTEBOOK),'exec'),ns)
+    assert ns['cohort'].display_participant_id.tolist()==expected
+    csv=pd.read_csv(tmp_path/'modality_diagnosis_cohort.csv')
+    exported=pd.read_json(tmp_path/'modality_diagnosis_cohort.json')
+    assert csv.display_participant_id.tolist()==expected
+    assert exported.display_participant_id.tolist()==expected
+    assert csv.loc[0,'primary_diagnosis_is_inferred']==False
+    if include_inferred:
+        assert csv.loc[1,'primary_diagnosis_is_inferred']==True
+        assert pd.isna(csv.loc[2,'primary_diagnosis_is_inferred'])
+
+
+def test_clinical_download_demos_reuse_the_filtered_cohort_and_keep_samples_small(tmp_path):
+    calls=[]
+    def plan(participants,**filters):
+        calls.append(('plan',participants.copy(),filters))
+        return SimpleNamespace(rows=[{'participant_id':'LCA-1'}],unresolved=[],
+            coverage_to_dataframe=lambda:pd.DataFrame(),to_dataframe=lambda:pd.DataFrame())
+    def download(plan,destination,**kwargs):
+        calls.append(('download',destination,kwargs))
+        return SimpleNamespace(to_dataframe=lambda:pd.DataFrame())
+    fake=SimpleNamespace(plan_participant_images=plan,download_images=download)
+    cohort=pd.DataFrame([{'short_title':'CMB-LCA','display_participant_id':'LCA-1'},
+                         {'short_title':'CMB-GEC','display_participant_id':'GEC-1'}])
+    ns={'pd':pd,'cohort':cohort,'tcia':fake,'display':lambda *a:None,'OUTPUT':tmp_path}
+    for marker,flag in [('clinical_image_participants =','DOWNLOAD_CLINICAL_CT'),('slide_images =','DOWNLOAD_CLINICAL_SLIDES')]:
+        tree=ast.parse(source_containing(marker))
+        assignment=next(n for n in tree.body if isinstance(n,ast.Assign) and any(isinstance(t,ast.Name) and t.id==flag for t in n.targets))
+        assignment.value=ast.Constant(True)
+        with redirect_stdout(io.StringIO()):exec(compile(ast.fix_missing_locations(tree),str(NOTEBOOK),'exec'),ns)
+    assert calls[0][1].display_participant_id.tolist()==['LCA-1']
+    assert calls[2][1].display_participant_id.tolist()==['LCA-1']
+    assert calls[0][2]=={'modality':'CT','file_format':'DICOM'}
+    assert calls[2][2]=={'modality':'Whole Slide Image','file_format':'non-DICOM'}
+    assert calls[1][2]['max_items']==calls[3][2]['max_items']==1

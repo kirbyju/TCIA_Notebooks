@@ -25,7 +25,7 @@ parser.add_argument(
 args = parser.parse_args()
 root = args.skill_source.resolve()
 sys.path.insert(0, str(root))
-from mcp_server.tcia_query_mcp.service import TciaQueryService, compact_download
+from mcp_server.tcia_query_mcp.service import TciaQueryService, compact_download, public_asset_download
 
 capture = json.loads(gzip.decompress(args.cassette.read_bytes()))
 requests = capture["requests"]
@@ -120,9 +120,24 @@ for title in downloads:
             "headers": {"content-type": "application/json"},
             "body": base64.b64encode(json.dumps(body, separators=(",", ":")).encode()).decode(),
         }
+# Add filtered public-manifest plans used by the cohort image helper.
+for title in downloads:
+    canonical=downloads[title][0]["short_title"]
+    kind=downloads[title][0]["dataset_type"].casefold().replace(" ","_")
+    body=service.get_download_plan(canonical,dataset_type=kind,access_levels=["open"])
+    url="https://tcia.duckdns.org/v2/datasets/"+canonical+"/download-plan?"+urlencode({"access_levels":["open"],"dataset_type":kind},doseq=True)
+    key=json.dumps(["GET",url,""],separators=(",",":"))
+    requests[key]={"status":200,"headers":{"content-type":"application/json"},
+                   "body":base64.b64encode(json.dumps(body,separators=(",",":")).encode()).decode()}
+for key,item in requests.items():
+    method,url,_=json.loads(key)
+    if urlsplit(url).path=="/v2/public-non-dicom/assets" and item["status"]==200:
+        body=json.loads(base64.b64decode(item["body"]))
+        body["assets"]=[public_asset_download(row) for row in body["assets"]]
+        item["body"]=base64.b64encode(json.dumps(body,separators=(",",":")).encode()).decode()
 capture["local_contract_projection"] = {
     "projected_at_utc": datetime.now(timezone.utc).isoformat(),
-    "description": "Recorded public metadata projected through local shared-plan code; not a deployed-service response.",
+    "description": "Recorded public metadata projected through local shared-plan and public-file route code; not a deployed-service response.",
     "plan_version": 1,
     "source_sha256": {
         name: hashlib.sha256((root / name).read_bytes()).hexdigest()

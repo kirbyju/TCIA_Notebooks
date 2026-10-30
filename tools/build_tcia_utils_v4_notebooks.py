@@ -276,7 +276,6 @@ This is a participant query, not a search of collection descriptions. We'll firs
 code(r'''COHORT_COLLECTIONS = ["CMB-GEC", "CMB-LCA"]
 COHORT_MODALITY = "CT"
 DIAGNOSIS_TEXT = "Carcinoma"
-INCLUDE_INFERRED_DIAGNOSES = True
 candidates = tcia.search_participants(
     short_titles=COHORT_COLLECTIONS,
     dataset_type="collection",
@@ -334,11 +333,18 @@ display(with_clinical["clinical_link"].value_counts())
 print("Available diagnosis labels:")
 display(with_clinical["primary_diagnosis"].value_counts(dropna=False).to_frame("participants"))''')
 
-md(r'''Let's apply the diagnosis filter and see how many participant records remain. Set `INCLUDE_INFERRED_DIAGNOSES = False` above if you want recorded diagnoses only. The flag travels with the results either way.
+md(r'''Let's apply the diagnosis filter. In the **next code cell**, choose whether to allow diagnoses inferred from the dataset:
+
+- Leave `INCLUDE_INFERRED_DIAGNOSES = True` to allow matching diagnosis labels, including inferred ones.
+- Set it to `False` to keep only matching diagnoses explicitly marked as reported for that participant. Rows with an unknown inference status are also left out.
+
+The results include a separate column, `primary_diagnosis_is_inferred`: `True` means the diagnosis was inferred, `False` means it was reported at the participant level, and a blank means the inference status is unknown. This column stays in the displayed table and the saved CSV/JSON so you can tell how each diagnosis was obtained. It is different from the `INCLUDE_INFERRED_DIAGNOSES` setting, which controls what we include. Change that setting and rerun the next cell to compare the cohorts; you do not need to repeat the earlier metadata queries.
 
 We are counting **dataset-scoped participant records**. We have not deduplicated people across collections, and a missing clinical value does not mean a participant has no diagnosis. This cohort is limited to the selected collections and the information currently indexed.''')
 
-code(r'''matches = (
+code(r'''INCLUDE_INFERRED_DIAGNOSES = True  # False keeps only explicitly reported diagnoses.
+
+matches = (
     with_clinical["primary_diagnosis"]
     .astype("string")
     .fillna("")
@@ -465,6 +471,63 @@ if example:
     )
     (OUTPUT / "example_clinical_facts.json").write_text(json.dumps(facts.data, indent=2))
     (OUTPUT / "example_clinical_conflicts.json").write_text(json.dumps(conflicts.data, indent=2))''')
+
+md(r'''### From this clinical cohort to radiology images
+
+Now that we have our participant list, let's use it to choose some images. We'll keep the **CMB-LCA participants in `cohort`**, so the diagnosis and inference settings we just used still apply. We aren't starting a new clinical search.
+
+For the radiology example, choose **CT in DICOM format**. `plan_participant_images()` finds all indexed matching public CT series for these participants and shows coverage, including participants with no matches. It matches participant IDs within the collection and checks its published image manifest. It does not add other participants, modalities, or controlled images.
+
+Leave the switch off to inspect metadata only. If you turn it on, `max_items=1` downloads **one whole CT series**, including all of its DICOM image files. After inspecting that sample, omit `max_items` to download all matching public CT series in this plan. Rebuild the plan if you change the clinical filters. A single series can still be large.''')
+
+code(r'''clinical_image_participants = cohort[cohort["short_title"].eq("CMB-LCA")].copy()
+ct_images = tcia.plan_participant_images(
+    clinical_image_participants, modality="CT", file_format="DICOM"
+)
+display(ct_images.coverage_to_dataframe())
+display(
+    ct_images.to_dataframe().reindex(
+        columns=["short_title", "participant_id", "study_instance_uid", "series_instance_uid",
+                 "modality", "file_format", "instance_count", "size_bytes"]
+    )
+)
+if ct_images.unresolved:
+    display(pd.DataFrame(ct_images.unresolved))
+
+DOWNLOAD_CLINICAL_CT = False
+if DOWNLOAD_CLINICAL_CT and ct_images.rows:
+    report = tcia.download_images(ct_images, OUTPUT / "clinical-ct-sample", max_items=1)
+    display(report.to_dataframe())
+else:
+    print("Clinical CT download is off, or no matching public series were found.")''', tags=['optional-download'])
+
+md(r'''### Use the same clinical cohort for whole-slide pathology images
+
+For a pathology project, keep the **same CMB-LCA participant list** and ask for **Whole Slide Image in non-DICOM format**. This gives us individual slide files rather than a full-collection package. The coverage table tells us which clinically matched participants have downloadable slides; a participant with CT is not guaranteed to have a slide here.
+
+These are **public slide copies**, which may have been reformatted for browser viewing. Their equivalence to the submitter's original files is not established. If your analysis requires the submitted originals, follow the original-file download on the [CMB-LCA collection page](https://www.cancerimagingarchive.net/collection/cmb-lca/). That separate application workflow is outside this notebook.
+
+The next cell plans all matching public slides, but `max_items=1` keeps the opt-in download to **one whole slide file**. Omit that limit to download all matching slide files in the plan. Whole-slide files can be large even when we're downloading only one. Any matched file without a supported route remains unresolved and stops the transfer; we do not silently skip it.''')
+
+code(r'''slide_images = tcia.plan_participant_images(
+    clinical_image_participants, modality="Whole Slide Image", file_format="non-DICOM"
+)
+display(slide_images.coverage_to_dataframe())
+display(
+    slide_images.to_dataframe().reindex(
+        columns=["short_title", "participant_id", "modality", "file_format", "file_name",
+                 "size_bytes", "download_representation", "python_supported"]
+    )
+)
+if slide_images.unresolved:
+    display(pd.DataFrame(slide_images.unresolved))
+
+DOWNLOAD_CLINICAL_SLIDES = False
+if DOWNLOAD_CLINICAL_SLIDES and slide_images.rows:
+    report = tcia.download_images(slide_images, OUTPUT / "clinical-slide-sample", max_items=1)
+    display(report.to_dataframe())
+else:
+    print("Clinical slide download is off, or no matching public slides were found.")''', tags=['optional-download'])
 
 md(r'''## 3. Where are the public brain MR images with segmentation masks?
 
@@ -765,6 +828,9 @@ code(r'''run_record = {
         "include_inferred": INCLUDE_INFERRED_DIAGNOSES,
     },
     "dataset_download_groups": len(download_plan),
+    "clinical_ct_series": len(ct_images.rows),
+    "clinical_slide_files": len(slide_images.rows),
+    "clinical_ct_index_version": ct_images.scope["imaging_index_version"],
     "saved_manifests": saved_manifests,
     "external_download_ids": external_groups["download_id"].tolist(),
     "candidate_records": len(candidates),
