@@ -25,11 +25,12 @@ Download tables include patients/subjects, studies, series and images for each
 full group. Missing counts display as “Not reported”; CSVs keep missing values,
 and zero stays zero. Overlapping groups must not be summed as unique people.
 
-Five image-transfer switches stay off by default. Public DICOM and controlled
-manifest demos use max_items=1; the CT/SEG candidate demo keeps one file of each
+The three public image sample cells download when run, each with max_items=1.
+Controlled downloads stay off until an approved reader enables them. The controlled
+manifest demo uses max_items=1; the CT/SEG candidate demo keeps one file of each
 modality with max_items=2. These limits count whole series/files, not bytes.
-Preparation status appears before index loading; the same client reuses the index.
-progress=False silences status messages and the public DICOM transfer bar.
+Progress is displayed by default. Preparation status appears before index loading;
+the same client reuses the index.
 
 Controlled transfers require the reader's approved JSON key-file path. No key
 contents appear in the notebook, reports or metadata service. Python currently
@@ -43,12 +44,14 @@ Fixture mode preserves the public recording's original observation time and
 fingerprint. Local shared-plan projections are explicitly marked; they do not
 establish a deployed API or current research result. See validation/ for historical
 checks. Validation prohibits credentials and imaging payloads. The recorded replay
-skips installation and exercises an installed wheel with all transfers disabled.
+skips installation and exercises an installed wheel. In the validation-only copy,
+the three public sample calls use dry_run=True; controlled transfers remain off.
+Independent HTTP and subprocess guards also prohibit image transfers.
 
 The clinical section now ends with two CMB-LCA cohort downloads.
 `plan_participant_images()` inventories public CT series or non-DICOM slide files
 for exactly the clinically filtered participants; `download_images(..., max_items=1)`
-uses the existing Python adapters for a small opt-in transfer. Coverage includes
+uses the existing Python adapters for a one-item sample when the cell runs. Coverage includes
 zero-match participants and unresolved routes block execution. Public slide copies
 may be reformatted; they are not asserted equivalent to submitted originals.
 The new explicit slide descriptors require the matching local API changes.

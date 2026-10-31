@@ -7,6 +7,7 @@ Payload subprocesses are prohibited in all validation modes.
 """
 from __future__ import annotations
 import argparse
+import ast
 from datetime import datetime, timezone
 import gzip
 from importlib.metadata import distribution, version
@@ -95,8 +96,9 @@ print('RECORDED PUBLIC METADATA - not a live query' if _mode == 'fixture' else '
 
 POSTLUDE = r'''
 assert not INSTALL_FROM_PYPI
-assert not DOWNLOAD_PUBLIC_DICOM and not DOWNLOAD_CONTROLLED_CMB and not DOWNLOAD_CONTROLLED_CT
-assert not DOWNLOAD_CLINICAL_CT and not DOWNLOAD_CLINICAL_SLIDES
+assert not DOWNLOAD_CONTROLLED_CMB and not DOWNLOAD_CONTROLLED_CT
+assert report.scope['dry_run'] and report.scope['sample_selected_items'] == 1
+assert all(entry['status'] == 'planned' for entry in report.entries)
 assert not SOURCE_NIFTI and not MASK_NIFTI
 assert len(cohort) > 0 and len(brain_cohort) > 0 and len(face_selection) > 0
 assert cohort['short_title'].nunique() >= 2, 'Default cohort must actually span datasets.'
@@ -134,6 +136,30 @@ _Path(REPORT_VALUE).write_text(_json.dumps(_report, indent=2))
 '''
 
 
+def prepare_sample_dry_runs(notebook):
+    """Exercise the public sample calls without payloads in the QA-only copy."""
+    samples = [cell for cell in notebook.cells
+               if 'sample-download' in cell.metadata.get('tags', [])]
+    if len(samples) != 3:
+        raise RuntimeError('Expected three tagged public sample download cells')
+    for cell in samples:
+        tree = ast.parse(cell.source)
+        calls = [node for node in ast.walk(tree)
+                 if isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute)
+                 and node.func.attr in {'download_manifest', 'download_images'}]
+        if len(calls) != 1:
+            raise RuntimeError('Expected one download call in each public sample cell')
+        call = calls[0]
+        limits = [kw.value for kw in call.keywords if kw.arg == 'max_items']
+        if len(limits) != 1 or not isinstance(limits[0], ast.Constant) or limits[0].value != 1:
+            raise RuntimeError('Public samples must explicitly select max_items=1')
+        if any(kw.arg == 'dry_run' for kw in call.keywords):
+            raise RuntimeError('Reader samples should perform real downloads')
+        call.keywords.append(ast.keyword(arg='dry_run', value=ast.Constant(True)))
+        cell.source = ast.unparse(ast.fix_missing_locations(tree))
+    return len(samples)
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('directory', nargs='?', type=Path, default=ROOT / 'tcia_utils_v4')
@@ -169,6 +195,7 @@ def main():
         if len(installers) != 1:
             raise RuntimeError("Expected exactly one tagged installation cell")
         installers[0].source = 'INSTALL_FROM_PYPI = False\nprint("Validation uses the installed package; PyPI installation cell skipped.")'
+        sample_count = prepare_sample_dry_runs(nb)
         prelude = PRELUDE.replace('MODE_VALUE', repr(args.mode)).replace('CASSETTE_VALUE', repr(str(cassette)))
         postlude = 'import sys\n' + POSTLUDE.replace('REPORT_VALUE', repr(str(report_path)))
         nb.cells.insert(0, nbformat.v4.new_code_cell(prelude))
@@ -190,7 +217,8 @@ def main():
         findings.update({'observed_at_utc': datetime.now(timezone.utc).isoformat(),
                          'mode': args.mode, 'notebook': NAME, 'ok': True,
                          'notebook_sha256': __import__('hashlib').sha256(source.read_bytes()).hexdigest(),
-                         'installation_cell_skipped_for_installed_artifact': True})
+                         'installation_cell_skipped_for_installed_artifact': True,
+                         'public_sample_calls_run_as_dry_runs': sample_count})
         if args.mode == 'fixture':
             findings['recorded_metadata_at_utc'] = json.loads(gzip.decompress(cassette.read_bytes()))['observed_at_utc']
             findings['local_contract_projection'] = json.loads(gzip.decompress(cassette.read_bytes())).get('local_contract_projection')

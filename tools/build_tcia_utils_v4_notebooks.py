@@ -24,7 +24,7 @@ Our main example is [CMB-GEC](https://www.cancerimagingarchive.net/collection/cm
 
 Use Python **3.11 or newer**. The installation cell sets up the packages used in this lab. This notebook is self-contained: you do not need other files from the repository.
 
-Running all cells queries real, public metadata and saves small manifests and tables. Image downloads stay off until you choose to run them. You do not need an LLM account or a controlled-data account to explore the metadata.''')
+Running all cells queries real, public metadata, saves manifests and tables, and downloads the public image samples described below. Each public download uses `max_items=1` to select one whole series or file. Controlled downloads require your own approved access and remain off until you enable them. You do not need an LLM account to use this notebook.''')
 
 md(r'''## Let's get set up
 
@@ -193,7 +193,7 @@ print("Selected download groups:", len(download_plan))
 print("Groups supported by Python:", len(python_groups))
 print("Groups requiring an external download route:", len(external_groups))''')
 
-md(r'''### Save the manifests, then choose whether to download
+md(r'''### Save the official manifests
 
 The next cell uses `tcia.save_manifests()` to save the small official manifest files, with their original contents, source links, and checksums. It does not download images. Package links stay in the inventory; they are not mistaken for manifests.
 
@@ -205,28 +205,24 @@ display(manifest_report.to_dataframe())''')
 
 md(r'''### Download directly from Python
 
-Let's start with the **public DICOM imaging group**. We already saved its manifest, so we can pass that file straight to `tcia.download_manifest()`. The package reads the identifiers and handles the transfer; we do not need to parse the file ourselves. It prints “Preparing download selection…” immediately. The first public DICOM call prepares its imaging index; later calls through the same `tcia` client reuse it. File-transfer progress follows preparation. Use `progress=False` if you want to suppress these progress messages and the transfer bar.
+Let's start with the **public DICOM imaging group**. We already saved its manifest, so we can pass that file straight to `tcia.download_manifest()`. The package reads the identifiers and handles the transfer; we do not need to parse the file ourselves. It prints “Preparing download selection…” immediately. The first public DICOM call prepares its imaging index; later calls through the same `tcia` client reuse it. Download progress appears automatically after preparation.
 
 This function accepts a **local path or an HTTPS URL**, for either a `.tcia` manifest or a supported CSV/TSV manifest. It reads the manifest's route column and chooses the appropriate download method. If part of the requested selection is unavailable, it tells us rather than silently dropping those files.
 
 Before a large download, let's **try one item**. Passing `max_items=1` downloads the first whole DICOM series or file in the manifest. This is a real transfer, so it can help us check the setup and inspect the data. A whole series or file can still be large: this option limits the number of items, not the number of bytes.
 
-Leave `DOWNLOAD_PUBLIC_DICOM = False` to keep exploring without a transfer. If you enable it, the next cell downloads one DICOM series into a sample folder. The report shows how many items were selected and how many were available. These are the first items in the supplied order, so they may not represent every kind of data in the collection.
+Run the next cell to download one DICOM series into a sample folder. The report shows how many items were selected and how many were available. These are the first items in the supplied order, so they may not represent every kind of data in the collection.
 
 After checking the sample, use a separate destination and omit `max_items` to request the full manifest. A successful sample does not establish that every remaining item is available or that an image and segmentation match.''')
 
-code(r'''DOWNLOAD_PUBLIC_DICOM = False
-public_manifest = next(
+code(r'''public_manifest = next(
     item for item in saved_manifests if item["route_column"] == "SeriesInstanceUID"
 )
 
-if DOWNLOAD_PUBLIC_DICOM:
-    report = tcia.download_manifest(
-        OUTPUT / public_manifest["manifest"], OUTPUT / "samples" / DATASET, max_items=1
-    )
-    display(report.to_dataframe())
-else:
-    print("Public DICOM download is off. Set DOWNLOAD_PUBLIC_DICOM = True when ready.")''', tags=['optional-download'])
+report = tcia.download_manifest(
+    OUTPUT / public_manifest["manifest"], OUTPUT / "samples" / DATASET, max_items=1
+)
+display(report.to_dataframe())''', tags=['sample-download'])
 
 md(r'''### Groups requiring another application
 
@@ -474,7 +470,7 @@ Now that we have our participant list, let's use it to choose some images. We'll
 
 For the radiology example, choose **CT in DICOM format**. `plan_participant_images()` finds all indexed matching public CT series for these participants and shows coverage, including participants with no matches. It matches participant IDs within the collection and checks its published image manifest. It does not add other participants, modalities, or controlled images.
 
-Leave the switch off to inspect metadata only. If you turn it on, `max_items=1` downloads **one whole CT series**, including all of its DICOM image files. After inspecting that sample, omit `max_items` to download all matching public CT series in this plan. Rebuild the plan if you change the clinical filters. A single series can still be large.''')
+Run the next cell to inspect the matching series and download a sample. `max_items=1` downloads **one whole CT series**, including all of its DICOM image files. After inspecting that sample, omit `max_items` to download all matching public CT series in this plan. Rebuild the plan if you change the clinical filters. A single series can still be large.''')
 
 code(r'''clinical_image_participants = cohort[cohort["short_title"].eq("CMB-LCA")].copy()
 ct_images = tcia.plan_participant_images(
@@ -490,12 +486,11 @@ display(
 if ct_images.unresolved:
     display(pd.DataFrame(ct_images.unresolved))
 
-DOWNLOAD_CLINICAL_CT = False
-if DOWNLOAD_CLINICAL_CT and ct_images.rows:
+if ct_images.rows:
     report = tcia.download_images(ct_images, OUTPUT / "clinical-ct-sample", max_items=1)
     display(report.to_dataframe())
 else:
-    print("Clinical CT download is off, or no matching public series were found.")''', tags=['optional-download'])
+    print("No matching public CT series were found.")''', tags=['sample-download'])
 
 md(r'''### Use the same clinical cohort for whole-slide pathology images
 
@@ -503,7 +498,7 @@ For a pathology project, keep the **same CMB-LCA participant list** and ask for 
 
 These are **public slide copies**, which may have been reformatted for browser viewing. Their equivalence to the submitter's original files is not established. If your analysis requires the submitted originals, follow the original-file download on the [CMB-LCA collection page](https://www.cancerimagingarchive.net/collection/cmb-lca/). That separate application workflow is outside this notebook.
 
-The next cell plans all matching public slides, but `max_items=1` keeps the opt-in download to **one whole slide file**. Omit that limit to download all matching slide files in the plan. Whole-slide files can be large even when we're downloading only one. Any matched file without a supported route remains unresolved and stops the transfer; we do not silently skip it.''')
+The next cell plans all matching public slides and uses `max_items=1` to download **one whole slide file**. Omit that limit to download all matching slide files in the plan. Whole-slide files can be large even when we're downloading only one. Any matched file without a supported route remains unresolved and stops the transfer; we do not silently skip it.''')
 
 code(r'''slide_images = tcia.plan_participant_images(
     clinical_image_participants, modality="Whole Slide Image", file_format="non-DICOM"
@@ -518,12 +513,11 @@ display(
 if slide_images.unresolved:
     display(pd.DataFrame(slide_images.unresolved))
 
-DOWNLOAD_CLINICAL_SLIDES = False
-if DOWNLOAD_CLINICAL_SLIDES and slide_images.rows:
+if slide_images.rows:
     report = tcia.download_images(slide_images, OUTPUT / "clinical-slide-sample", max_items=1)
     display(report.to_dataframe())
 else:
-    print("Clinical slide download is off, or no matching public slides were found.")''', tags=['optional-download'])
+    print("No matching public slides were found.")''', tags=['sample-download'])
 
 md(r'''## 3. Where are the public brain MR images with segmentation masks?
 
@@ -863,8 +857,9 @@ Useful links: [TCIA Dataset Explorer](https://www.cancerimagingarchive.net/datas
 notebook = nbf.v4.new_notebook(cells=cells, metadata={
     "kernelspec": {"display_name":"Python 3", "language":"python", "name":"python3"},
     "language_info": {"name":"python", "version":"3.11"},
-    "tcia_workshop": {"package_version":"4.0.0a5", "default_mode":"live_public_metadata",
-        "payload_downloads_default":False, "audience":"junior data scientists"}})
+    "tcia_workshop": {"package_version":"4.0.0a5", "default_mode":"live_public_samples",
+        "payload_downloads_default":True, "public_sample_max_items":1,
+        "controlled_downloads_default":False, "audience":"junior data scientists"}})
 for i, cell in enumerate(notebook.cells): cell.id = f"tcia-workshop-{i:02d}"
 OUT.mkdir(exist_ok=True)
 nbf.validate(notebook)
