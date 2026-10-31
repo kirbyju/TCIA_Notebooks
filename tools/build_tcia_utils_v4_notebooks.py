@@ -34,7 +34,7 @@ Run the next cell to install the packages used in this lab. In Colab, run the no
 
 code(r'''import subprocess, sys
 subprocess.check_call(
-    [sys.executable, "-m", "pip", "install", "tcia_utils[tables,downloads]==4.0.0a4", "nibabel>=5,<6"]
+    [sys.executable, "-m", "pip", "install", "tcia_utils[tables,downloads]==4.0.0a5", "nibabel>=5,<6"]
 )''', tags=['installation'])
 
 code(r'''from pathlib import Path
@@ -48,12 +48,14 @@ import os
 import httpx
 import pandas as pd
 from IPython.display import display, Markdown
+import tcia_utils
 from tcia_utils import TCIAClient, DownloadError
 
-assert all(
+assert hasattr(tcia_utils, "format_table") and all(
     hasattr(TCIAClient, method)
     for method in ("download_manifest", "plan_participant_images", "download_images")
-), "Run the installation cell for tcia_utils 4.0.0a4, restart your Python/Colab runtime, then run from the top."
+), "Run the installation cell for tcia_utils 4.0.0a5, restart your Python/Colab runtime, then run from the top."
+format_table = tcia_utils.format_table
 pd.set_option("display.max_colwidth", 85)
 OUTPUT = Path(os.environ.get("TCIA_EXAMPLE_OUTPUT_DIR", "tcia-workshop-output"))
 OUTPUT.mkdir(parents=True, exist_ok=True)
@@ -114,6 +116,8 @@ display(
 
 md(r'''The `data_categories` column tells us what kinds of downloadable data a collection publishes, such as radiology or pathology images. `download_data_types` shows modalities and other data types, while `download_file_types` shows formats. External resources, such as linked clinical information, stay in their own column.
 
+Multi-value fields are Python lists, even when there is only one value. An empty list means no value was reported.
+
 These are **collection-level** labels. Finding a collection with CT and a cancer label does not tell us that every participant has both. We'll check participant-level information in section 2.
 
 Now let's open CMB-GEC. The download table is especially useful: it tells us which files are public, which need approval, and which formats we'll receive.''')
@@ -131,7 +135,8 @@ print("Public external clinical resource linked:", collection["has_external_clin
 plan = tcia.plan_downloads(DATASET)
 downloads = plan.to_dataframe()
 display(
-    downloads.reindex(
+    format_table(
+        downloads,
         columns=[
             "download_id",
             "download_title",
@@ -150,7 +155,7 @@ display(
             "download_size_unit",
             "download_url",
         ]
-    ).convert_dtypes().astype(object).fillna("Not reported")
+    )
 )
 downloads.to_csv(OUTPUT / "CMB-GEC_download_inventory.csv", index=False)''')
 
@@ -167,7 +172,8 @@ manifest_groups = python_groups[
     python_groups["download_method"].isin(["dicom_manifest", "tabular_manifest"])
 ]
 display(
-    download_plan.reindex(
+    format_table(
+        download_plan,
         columns=[
             "download_id",
             "download_title",
@@ -181,7 +187,7 @@ display(
             "access_level",
             "file_types",
         ]
-    ).convert_dtypes().astype(object).fillna("Not reported")
+    )
 )
 print("Selected download groups:", len(download_plan))
 print("Groups supported by Python:", len(python_groups))
@@ -633,7 +639,8 @@ code(r'''brain_downloads = pd.concat(
     ignore_index=True,
 )
 display(
-    brain_downloads.reindex(
+    format_table(
+        brain_downloads,
         columns=[
             "short_title",
             "download_title",
@@ -650,7 +657,7 @@ display(
             "download_size_unit",
             "download_url",
         ]
-    ).convert_dtypes().astype(object).fillna("Not reported")
+    )
 )
 brain_downloads.to_csv(OUTPUT / "brain_dataset_downloads.csv", index=False)''')
 
@@ -703,7 +710,8 @@ The labels here include DICOM **SEG** (segmentation images) and **RTSTRUCT** (ra
 code(r'''FACE_COLLECTION = "HEAD-NECK-RADIOMICS-HN1"
 face_downloads = tcia.plan_downloads(FACE_COLLECTION).to_dataframe()
 display(
-    face_downloads.reindex(
+    format_table(
+        face_downloads,
         columns=[
             "download_id",
             "download_title",
@@ -719,7 +727,7 @@ display(
             "license_label",
             "download_url",
         ]
-    ).convert_dtypes().astype(object).fillna("Not reported")
+    )
 )
 face_result = tcia.list_controlled_files(FACE_COLLECTION, limit=500)
 if face_result.data["count"] == face_result.data["limit"]:
@@ -855,7 +863,7 @@ Useful links: [TCIA Dataset Explorer](https://www.cancerimagingarchive.net/datas
 notebook = nbf.v4.new_notebook(cells=cells, metadata={
     "kernelspec": {"display_name":"Python 3", "language":"python", "name":"python3"},
     "language_info": {"name":"python", "version":"3.11"},
-    "tcia_workshop": {"package_version":"4.0.0a4", "default_mode":"live_public_metadata",
+    "tcia_workshop": {"package_version":"4.0.0a5", "default_mode":"live_public_metadata",
         "payload_downloads_default":False, "audience":"junior data scientists"}})
 for i, cell in enumerate(notebook.cells): cell.id = f"tcia-workshop-{i:02d}"
 OUT.mkdir(exist_ok=True)

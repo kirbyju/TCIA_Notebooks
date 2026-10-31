@@ -1,4 +1,4 @@
-tcia_utils[tables,downloads]==4.0.0a4
+tcia_utils[tables,downloads]==4.0.0a5
 nibabel>=5,<6
 # Maintainer-only notebook validation dependencies.
 nbformat>=5,<6

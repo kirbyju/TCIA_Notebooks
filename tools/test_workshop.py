@@ -7,7 +7,7 @@ from types import SimpleNamespace
 import nbformat
 import pandas as pd
 import pytest
-from tcia_utils import Result, Completeness
+from tcia_utils import Result, Completeness, format_table
 
 NOTEBOOK=Path(__file__).resolve().parents[1]/'tcia_utils_v4/TCIA_Dataset_and_Participant_Queries.ipynb'
 
@@ -39,7 +39,7 @@ def test_controlled_cohort_requires_same_participant_and_study(tmp_path):
         rows.append({'short_title':'EXAMPLE','participant_id':participant,'study_instance_uid':study,'modality':modality})
     fake=SimpleNamespace(plan_downloads=lambda *a,**k:SimpleNamespace(to_dataframe=lambda **k:pd.DataFrame()),
         list_controlled_files=lambda *a,**k:SimpleNamespace(data={'files':rows,'count':len(rows),'limit':500}))
-    ns={'pd':pd,'tcia':fake,'display':lambda *a:None,'OUTPUT':tmp_path}
+    ns={'format_table':format_table,'pd':pd,'tcia':fake,'display':lambda *a:None,'OUTPUT':tmp_path}
     with redirect_stdout(io.StringIO()):exec(source_containing('FACE_COLLECTION ='),ns)
     assert ns['face_cohort'].participant_id.tolist()==['B']
 
@@ -47,7 +47,7 @@ def test_controlled_cohort_requires_same_participant_and_study(tmp_path):
 def test_empty_modality_search_is_a_clear_zero_match(tmp_path):
     fake=SimpleNamespace(search_participants=lambda **k:SimpleNamespace(to_dataframe=lambda **k:pd.DataFrame()),
         clinical_for_participants=lambda x:Result({'subjects':[]},(),None,Completeness('complete')))
-    ns={'pd':pd,'tcia':fake,'display':lambda *a:None,'OUTPUT':tmp_path}
+    ns={'format_table':format_table,'pd':pd,'tcia':fake,'display':lambda *a:None,'OUTPUT':tmp_path}
     output=io.StringIO()
     with redirect_stdout(output):
         exec(source_containing('COHORT_COLLECTIONS ='),ns)
@@ -76,17 +76,17 @@ def test_nifti_grid_check_detects_affine_mismatch(tmp_path,mismatch):
 def test_collection_results_display_categories_separately_from_types_and_formats():
     observed = []
     raw = pd.DataFrame([{'short_title':'EXAMPLE','dataset_type':'Collection',
-                         'download_data_types':'CT; Whole Slide Image','download_file_types':'DICOM; SVS'}])
+                         'download_data_types':['CT','Whole Slide Image'],'download_file_types':['DICOM','SVS']}])
     described = raw.assign(data_categories=[['Radiology Images','Pathology Images']])
     fake = SimpleNamespace(
         search_datasets=lambda **k:SimpleNamespace(to_dataframe=lambda **k:described),
     )
     with redirect_stdout(io.StringIO()):
-        exec(source_containing('CANCER_LOCATION ='), {'tcia':fake,'display':observed.append})
+        exec(source_containing('CANCER_LOCATION ='), {'tcia':fake,'display':observed.append,'format_table':format_table})
     table = observed[0]
     assert table.loc[0,'data_categories']==['Radiology Images','Pathology Images']
-    assert table.loc[0,'download_data_types']=='CT; Whole Slide Image'
-    assert table.loc[0,'download_file_types']=='DICOM; SVS'
+    assert table.loc[0,'download_data_types']==['CT','Whole Slide Image']
+    assert table.loc[0,'download_file_types']==['DICOM','SVS']
 
 
 def test_manifest_examples_accept_local_path_and_url_without_notebook_parsing(tmp_path):
@@ -125,7 +125,7 @@ def test_sample_pair_keeps_one_ct_and_one_seg_when_study_has_many_series(tmp_pat
          'modality':modality,'series_instance_uid':f'1.2.{i}',
          'drs_uri':f'drs://example/{i}','file_size_bytes':4,'file_name':f'{i}.zip'}
         for i,modality in enumerate(['CT','CT','CT','SEG','SEG'])])
-    ns={'pd':pd,'usable':usable,'face_cohort':pd.DataFrame([{'participant_id':'P','study_instance_uid':'S'}]),
+    ns={'format_table':format_table,'pd':pd,'usable':usable,'face_cohort':pd.DataFrame([{'participant_id':'P','study_instance_uid':'S'}]),
         'OUTPUT':tmp_path,'display':lambda *a:None}
     with redirect_stdout(io.StringIO()):exec(source_containing('face_selection = pd.DataFrame()'),ns)
     assert ns['face_selection'].modality.tolist()==['CT','SEG']
@@ -136,10 +136,10 @@ def test_download_tables_show_published_counts_without_turning_missing_into_zero
     from IPython.display import Markdown
     observed=[]
     rows=pd.DataFrame([
-        {'download_id':'1','download_title':'Imaging','download_category':'Radiology Images',
+        {'download_id':'1','download_title':'Imaging','download_category':['Radiology Images'],
          'download_requirements':'Example','python_supported':True,'download_method':'dicom_manifest',
          'subjects':12,'studies':15,'series':0,'images':100},
-        {'download_id':'2','download_title':'Other','download_category':'Pathology Images',
+        {'download_id':'2','download_title':'Other','download_category':['Pathology Images'],
          'download_requirements':'Example','python_supported':False,'download_method':'aspera_package',
          'subjects':None,'studies':None,'series':None,'images':None},
     ])
@@ -147,7 +147,7 @@ def test_download_tables_show_published_counts_without_turning_missing_into_zero
                 'title':'Example','current_version_number':'1','has_external_clinical_resource':False}
     fake=SimpleNamespace(get_dataset=lambda *a:SimpleNamespace(data={'datasets':[collection]}),
         plan_downloads=lambda *a:SimpleNamespace(to_dataframe=lambda:rows))
-    ns={'pd':pd,'tcia':fake,'display':observed.append,'Markdown':Markdown,'OUTPUT':tmp_path}
+    ns={'format_table':format_table,'pd':pd,'tcia':fake,'display':observed.append,'Markdown':Markdown,'OUTPUT':tmp_path}
     with redirect_stdout(io.StringIO()):
         exec(source_containing('DATASET = "CMB-GEC"'),ns)
         exec(source_containing('download_plan = downloads'),ns)
@@ -183,7 +183,7 @@ def test_diagnosis_control_is_next_to_filter_and_export_retains_row_provenance(t
     assert isinstance(tree.body[0],ast.Assign)
     assert tree.body[0].targets[0].id=='INCLUDE_INFERRED_DIAGNOSES'
     tree.body[0].value=ast.Constant(include_inferred)
-    ns={'pd':pd,'with_clinical':pd.DataFrame(rows),'DIAGNOSIS_TEXT':'carcinoma',
+    ns={'format_table':format_table,'pd':pd,'with_clinical':pd.DataFrame(rows),'DIAGNOSIS_TEXT':'carcinoma',
         'OUTPUT':tmp_path,'display':lambda *a:None}
     with redirect_stdout(io.StringIO()):exec(compile(ast.fix_missing_locations(tree),str(NOTEBOOK),'exec'),ns)
     assert ns['cohort'].display_participant_id.tolist()==expected
@@ -209,7 +209,7 @@ def test_clinical_download_demos_reuse_the_filtered_cohort_and_keep_samples_smal
     fake=SimpleNamespace(plan_participant_images=plan,download_images=download)
     cohort=pd.DataFrame([{'short_title':'CMB-LCA','display_participant_id':'LCA-1'},
                          {'short_title':'CMB-GEC','display_participant_id':'GEC-1'}])
-    ns={'pd':pd,'cohort':cohort,'tcia':fake,'display':lambda *a:None,'OUTPUT':tmp_path}
+    ns={'format_table':format_table,'pd':pd,'cohort':cohort,'tcia':fake,'display':lambda *a:None,'OUTPUT':tmp_path}
     for marker,flag in [('clinical_image_participants =','DOWNLOAD_CLINICAL_CT'),('slide_images =','DOWNLOAD_CLINICAL_SLIDES')]:
         tree=ast.parse(source_containing(marker))
         assignment=next(n for n in tree.body if isinstance(n,ast.Assign) and any(isinstance(t,ast.Name) and t.id==flag for t in n.targets))
