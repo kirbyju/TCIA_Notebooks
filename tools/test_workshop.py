@@ -26,11 +26,19 @@ def test_lesson_has_no_custom_helpers_or_prerelease_tutorial():
     assert 'download_category' in source_containing('download_plan = downloads')
 
 
-def test_all_imaging_transfers_remain_opt_in():
-    for flag in ['DOWNLOAD_PUBLIC_DICOM','DOWNLOAD_CONTROLLED_CMB','DOWNLOAD_CONTROLLED_CT','DOWNLOAD_CLINICAL_CT','DOWNLOAD_CLINICAL_SLIDES']:
+def test_controlled_transfers_remain_opt_in_and_public_samples_run_directly():
+    n=nbformat.read(NOTEBOOK,as_version=4)
+    assert n.metadata.tcia_workshop.payload_downloads_default is True
+    assert n.metadata.tcia_workshop.controlled_downloads_default is False
+    for flag in ['DOWNLOAD_CONTROLLED_CMB','DOWNLOAD_CONTROLLED_CT']:
         source=source_containing(flag+' =')
         assert any(isinstance(node,ast.Assign) and any(isinstance(target,ast.Name) and target.id==flag for target in node.targets)
                    and isinstance(node.value,ast.Constant) and node.value.value is False for node in ast.parse(source).body)
+    samples=[c for c in n.cells if 'sample-download' in c.metadata.get('tags',[])]
+    assert len(samples)==3
+    for cell in samples:
+        assert 'DOWNLOAD_' not in cell.source
+        assert 'progress=' not in cell.source and 'dry_run=' not in cell.source
 
 
 def test_controlled_cohort_requires_same_participant_and_study(tmp_path):
@@ -96,8 +104,7 @@ def test_manifest_examples_accept_local_path_and_url_without_notebook_parsing(tm
     saved=[{'route_column':'SeriesInstanceUID','manifest':'public.tcia'},
            {'route_column':'drs_uri','manifest':'controlled.csv','url':'https://example.org/controlled.csv'}]
     ns={'tcia':fake,'saved_manifests':saved,'OUTPUT':tmp_path,'DATASET':'EXAMPLE','display':lambda *a:None}
-    public=ast.parse(source_containing('DOWNLOAD_PUBLIC_DICOM ='))
-    public.body[0].value=ast.Constant(True)
+    public=ast.parse(source_containing('public_manifest = next('))
     controlled=ast.parse(source_containing('CREDENTIAL_FILE ='))
     controlled.body[0].value=ast.Constant('approved-test-key.json')
     controlled.body[1].value=ast.Constant(True)
@@ -111,7 +118,7 @@ def test_manifest_examples_accept_local_path_and_url_without_notebook_parsing(tm
 
 
 def test_demo_downloads_are_bounded_and_keep_controlled_scan_label_pair():
-    for marker, limit in [('DOWNLOAD_PUBLIC_DICOM =', 1), ('CREDENTIAL_FILE =', 1), ('DOWNLOAD_CONTROLLED_CT =', 2), ('DOWNLOAD_CLINICAL_CT =',1), ('DOWNLOAD_CLINICAL_SLIDES =',1)]:
+    for marker, limit in [('public_manifest = next(', 1), ('CREDENTIAL_FILE =', 1), ('DOWNLOAD_CONTROLLED_CT =', 2), ('clinical_image_participants =',1), ('slide_images =',1)]:
         calls = [node for node in ast.walk(ast.parse(source_containing(marker)))
                  if isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute)
                  and node.func.attr in {'download_manifest', 'download_files', 'download_images'}]
@@ -210,13 +217,24 @@ def test_clinical_download_demos_reuse_the_filtered_cohort_and_keep_samples_smal
     cohort=pd.DataFrame([{'short_title':'CMB-LCA','display_participant_id':'LCA-1'},
                          {'short_title':'CMB-GEC','display_participant_id':'GEC-1'}])
     ns={'format_table':format_table,'pd':pd,'cohort':cohort,'tcia':fake,'display':lambda *a:None,'OUTPUT':tmp_path}
-    for marker,flag in [('clinical_image_participants =','DOWNLOAD_CLINICAL_CT'),('slide_images =','DOWNLOAD_CLINICAL_SLIDES')]:
+    for marker in ['clinical_image_participants =','slide_images =']:
         tree=ast.parse(source_containing(marker))
-        assignment=next(n for n in tree.body if isinstance(n,ast.Assign) and any(isinstance(t,ast.Name) and t.id==flag for t in n.targets))
-        assignment.value=ast.Constant(True)
         with redirect_stdout(io.StringIO()):exec(compile(ast.fix_missing_locations(tree),str(NOTEBOOK),'exec'),ns)
     assert calls[0][1].display_participant_id.tolist()==['LCA-1']
     assert calls[2][1].display_participant_id.tolist()==['LCA-1']
     assert calls[0][2]=={'modality':'CT','file_format':'DICOM'}
     assert calls[2][2]=={'modality':'Whole Slide Image','file_format':'non-DICOM'}
     assert calls[1][2]['max_items']==calls[3][2]['max_items']==1
+
+
+@pytest.mark.parametrize('damage',['unbounded_sample','untagged_sample'])
+def test_validation_rejects_unbounded_or_unclassified_sample_cells(damage):
+    from run_tcia_workshop import prepare_sample_dry_runs
+    n=nbformat.read(NOTEBOOK,as_version=4)
+    cell=next(c for c in n.cells if 'sample-download' in c.metadata.get('tags',[]))
+    if damage=='unbounded_sample':
+        cell.source=cell.source.replace(', max_items=1','')
+    else:
+        cell.metadata.tags=[]
+    with pytest.raises(RuntimeError):
+        prepare_sample_dry_runs(n)
