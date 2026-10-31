@@ -8,7 +8,7 @@ and CMB-LCA, public brain MR/NIfTI segmentation metadata, and controlled CT/SEG
 candidate selection. It explains public versus controlled access and DICOM versus
 other formats without teaching the hosting infrastructure.
 
-The workshop installs the 4.0.0a4 preview from PyPI in Python 3.11+. In Colab,
+The workshop installs the 4.0.0a5 preview from PyPI in Python 3.11+. In Colab,
 run the installation cell, restart the runtime if prompted, and run from the top.
 The hosted REST service must include the shared download-plan and explicit public
 slide-file descriptors. Set TCIA_REST_BASE_URL for another updated service.
@@ -54,3 +54,8 @@ may be reformatted; they are not asserted equivalent to submitted originals.
 The new explicit slide descriptors require the matching local API changes.
 The added recording is bound to the same TCIA fingerprint as the earlier fixture,
 with a separately identified bundled-IDC metadata subset and observation time.
+
+Multi-value dataset and download attributes are lists, including singleton and
+empty values. This requires the coordinated REST/MCP response update. Download
+tables use the SDK's format_table() display helper, which keeps raw query/export
+values intact and avoids pandas implicit-downcasting warnings.

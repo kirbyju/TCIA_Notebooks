@@ -25,7 +25,7 @@ parser.add_argument(
 args = parser.parse_args()
 root = args.skill_source.resolve()
 sys.path.insert(0, str(root))
-from mcp_server.tcia_query_mcp.service import TciaQueryService, compact_download, public_asset_download
+from mcp_server.tcia_query_mcp.service import TciaQueryService, compact_download, public_asset_download, normalize_row
 
 capture = json.loads(gzip.decompress(args.cassette.read_bytes()))
 requests = capture["requests"]
@@ -45,6 +45,14 @@ for key, item in list(requests.items()):
     )
     if body is None:
         continue
+    # The current API returns categorical multi-value fields as arrays.
+    # Preserve all fields while projecting the recorded dataset responses through
+    # the same server normalizer; this is not client legacy-server handling.
+    if segments[:2] == ["v2", "datasets"]:
+        for field in ("datasets", "current_downloads", "related_analysis_results", "downloads"):
+            if isinstance(body.get(field), list):
+                body[field] = [normalize_row(row) for row in body[field]]
+        item["body"] = base64.b64encode(json.dumps(body,separators=(",",":")).encode()).decode()
     if len(segments) == 3 and segments[:2] == ["v2", "datasets"]:
         details[unquote(segments[2]).casefold()] = body
         for row in body["datasets"]:
