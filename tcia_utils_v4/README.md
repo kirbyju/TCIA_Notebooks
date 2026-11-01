@@ -8,7 +8,7 @@ and CMB-LCA, public brain MR/NIfTI segmentation metadata, and controlled CT/SEG
 candidate selection. It explains public versus controlled access and DICOM versus
 other formats without teaching the hosting infrastructure.
 
-The workshop installs the 4.0.0a5 preview from PyPI in Python 3.11+. In Colab,
+The workshop installs the 4.0.0a6 preview from PyPI in Python 3.11+. In Colab,
 run the installation cell, restart the runtime if prompted, and run from the top.
 The hosted REST service must include the shared download-plan and explicit public
 slide-file descriptors. Set TCIA_REST_BASE_URL for another updated service.
@@ -30,7 +30,11 @@ Controlled downloads stay off until an approved reader enables them. The control
 manifest demo uses max_items=1; the CT/SEG candidate demo keeps one file of each
 modality with max_items=2. These limits count whole series/files, not bytes.
 Progress is displayed by default. Preparation status appears before index loading;
-the same client reuses the index.
+the same client reuses the index. Downloads use normal copy behavior by default,
+including after a sample. To continue an interrupted public DICOM download, pass
+resume=True and reuse the same destination. The synchronization scan runs before
+the transfer bar and may take time. Other file routes retain their existing
+size/checksum and overwrite behavior without partial-file resume.
 
 Controlled transfers require the reader's approved JSON key-file path. No key
 contents appear in the notebook, reports or metadata service. Python currently
