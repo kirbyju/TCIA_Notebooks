@@ -1,0 +1,601 @@
+{
+  "idc_version": "v25",
+  "collection": "CMB-GEC",
+  "source_manifest_url": "https://www.cancerimagingarchive.net/wp-content/uploads/CMB-GEC_v09_20260702.tcia",
+  "source_manifest_sha256": "c49654b1c9e2f24e63da15ecc8279e83c42b0790e3b3460d65805e9d20f45a86",
+  "selection": "Hash-sorted whole public CT/MR series, >=32 instances and <=350 MB; stop at 4.95\u20135.00 GB.",
+  "series": [
+    {
+      "SeriesInstanceUID": "1.3.6.1.4.1.14519.5.2.1.167599653028824660863264747659737383764",
+      "StudyInstanceUID": "1.3.6.1.4.1.14519.5.2.1.85144673047777774819850113854233921141",
+      "PatientID": "MSB-01594",
+      "Modality": "CT",
+      "series_size_MB": 74.308906,
+      "instanceCount": 141,
+      "license_short_name": "CC BY 4.0",
+      "current_url": "s3://idc-open-data/024a980a-7b06-4422-9650-45b83ca60666/*"
+    },
+    {
+      "SeriesInstanceUID": "1.3.6.1.4.1.14519.5.2.1.181357166190929532002126137669068676388",
+      "StudyInstanceUID": "1.3.6.1.4.1.14519.5.2.1.338418853059262081078105874030016013110",
+      "PatientID": "MSB-09006",
+      "Modality": "CT",
+      "series_size_MB": 103.789152,
+      "instanceCount": 142,
+      "license_short_name": "CC BY 4.0",
+      "current_url": "s3://idc-open-data/a13757db-f7a6-4097-b775-849b942e11ae/*"
+    },
+    {
+      "SeriesInstanceUID": "1.3.6.1.4.1.14519.5.2.1.118903121439415453288660234316690849429",
+      "StudyInstanceUID": "1.3.6.1.4.1.14519.5.2.1.122028485916632775871250287560782562062",
+      "PatientID": "MSB-00142",
+      "Modality": "CT",
+      "series_size_MB": 76.111114,
+      "instanceCount": 143,
+      "license_short_name": "CC BY 4.0",
+      "current_url": "s3://idc-open-data/41af7530-95e6-4748-9c72-38323e96cde0/*"
+    },
+    {
+      "SeriesInstanceUID": "1.3.6.1.4.1.14519.5.2.1.228153926860500410069438600140887075484",
+      "StudyInstanceUID": "1.3.6.1.4.1.14519.5.2.1.228246448982084761777803439641099382419",
+      "PatientID": "MSB-09006",
+      "Modality": "CT",
+      "series_size_MB": 99.822256,
+      "instanceCount": 128,
+      "license_short_name": "CC BY 4.0",
+      "current_url": "s3://idc-open-data/6628221b-4888-438c-be54-a74e39c68a1b/*"
+    },
+    {
+      "SeriesInstanceUID": "1.3.6.1.4.1.14519.5.2.1.99513515194584746500164170772126585031",
+      "StudyInstanceUID": "1.3.6.1.4.1.14519.5.2.1.305971326806316723153658530749063804500",
+      "PatientID": "MSB-00142",
+      "Modality": "CT",
+      "series_size_MB": 59.956816,
+      "instanceCount": 101,
+      "license_short_name": "CC BY 4.0",
+      "current_url": "s3://idc-open-data/d9169868-192a-4dbc-94c7-8c1584f71403/*"
+    },
+    {
+      "SeriesInstanceUID": "1.3.6.1.4.1.14519.5.2.1.1.32088189862789506707968558004303915476",
+      "StudyInstanceUID": "1.3.6.1.4.1.14519.5.2.1.1.45192490094368746596088726994491747954",
+      "PatientID": "MSB-06857",
+      "Modality": "CT",
+      "series_size_MB": 147.895698,
+      "instanceCount": 112,
+      "license_short_name": "CC BY 4.0",
+      "current_url": "s3://idc-open-data/afa8dd35-9b71-4572-92e5-6269a3b2606e/*"
+    },
+    {
+      "SeriesInstanceUID": "1.3.6.1.4.1.14519.5.2.1.68882757907919972479425279647425793987",
+      "StudyInstanceUID": "1.3.6.1.4.1.14519.5.2.1.158833728137844707703036557071058768128",
+      "PatientID": "MSB-00142",
+      "Modality": "CT",
+      "series_size_MB": 196.93,
+      "instanceCount": 373,
+      "license_short_name": "CC BY 4.0",
+      "current_url": "s3://idc-open-data/26919d0c-da28-4f07-866d-6ea26e352a2c/*"
+    },
+    {
+      "SeriesInstanceUID": "1.3.6.1.4.1.14519.5.2.1.334322756881677384843786715406370083022",
+      "StudyInstanceUID": "1.3.6.1.4.1.14519.5.2.1.335513371787839605506735405227103435632",
+      "PatientID": "MSB-00142",
+      "Modality": "CT",
+      "series_size_MB": 79.742914,
+      "instanceCount": 151,
+      "license_short_name": "CC BY 4.0",
+      "current_url": "s3://idc-open-data/0a542247-9be7-45cd-b18a-159c1d4db976/*"
+    },
+    {
+      "SeriesInstanceUID": "1.3.6.1.4.1.14519.5.2.1.1.21732678489283911036704894309815793420",
+      "StudyInstanceUID": "1.3.6.1.4.1.14519.5.2.1.1.15355568899500548538289242070090169558",
+      "PatientID": "MSB-06857",
+      "Modality": "CT",
+      "series_size_MB": 74.430676,
+      "instanceCount": 141,
+      "license_short_name": "CC BY 4.0",
+      "current_url": "s3://idc-open-data/26f9cbb3-ee1e-4cd5-8a9f-ed55c00c9047/*"
+    },
+    {
+      "SeriesInstanceUID": "1.3.6.1.4.1.14519.5.2.1.186644613818855519747678579452241705879",
+      "StudyInstanceUID": "1.3.6.1.4.1.14519.5.2.1.338418853059262081078105874030016013110",
+      "PatientID": "MSB-09006",
+      "Modality": "CT",
+      "series_size_MB": 76.052834,
+      "instanceCount": 144,
+      "license_short_name": "CC BY 4.0",
+      "current_url": "s3://idc-open-data/337dc89b-c80a-4efe-8b7a-f1cc165ed807/*"
+    },
+    {
+      "SeriesInstanceUID": "1.3.6.1.4.1.14519.5.2.1.238873156522726704803054820636826113645",
+      "StudyInstanceUID": "1.3.6.1.4.1.14519.5.2.1.245380081716850000484974983856441313026",
+      "PatientID": "MSB-04437",
+      "Modality": "MR",
+      "series_size_MB": 13.08771,
+      "instanceCount": 80,
+      "license_short_name": "CC BY 4.0",
+      "current_url": "s3://idc-open-data/68462a50-2256-4834-b709-28d725afded3/*"
+    },
+    {
+      "SeriesInstanceUID": "1.3.6.1.4.1.14519.5.2.1.224163065930968026684758231017601951124",
+      "StudyInstanceUID": "1.3.6.1.4.1.14519.5.2.1.245380081716850000484974983856441313026",
+      "PatientID": "MSB-04437",
+      "Modality": "MR",
+      "series_size_MB": 13.088306,
+      "instanceCount": 80,
+      "license_short_name": "CC BY 4.0",
+      "current_url": "s3://idc-open-data/602d45ba-8cbd-4c10-bb69-fc55d8857cc5/*"
+    },
+    {
+      "SeriesInstanceUID": "1.3.6.1.4.1.14519.5.2.1.79723308184623876856717764322149329822",
+      "StudyInstanceUID": "1.3.6.1.4.1.14519.5.2.1.151771114318956321342900901168954243629",
+      "PatientID": "MSB-01594",
+      "Modality": "CT",
+      "series_size_MB": 78.47185,
+      "instanceCount": 149,
+      "license_short_name": "CC BY 4.0",
+      "current_url": "s3://idc-open-data/79d03873-8115-416b-b417-b2956839936a/*"
+    },
+    {
+      "SeriesInstanceUID": "1.3.6.1.4.1.14519.5.2.1.339593386565307864185866290492738287275",
+      "StudyInstanceUID": "1.3.6.1.4.1.14519.5.2.1.40675875795373600501817585928433322338",
+      "PatientID": "MSB-00142",
+      "Modality": "CT",
+      "series_size_MB": 84.89209,
+      "instanceCount": 134,
+      "license_short_name": "CC BY 4.0",
+      "current_url": "s3://idc-open-data/785f4db3-f84a-4880-a5a8-94caf4150103/*"
+    },
+    {
+      "SeriesInstanceUID": "1.3.6.1.4.1.14519.5.2.1.238900984979702767703124899985870226885",
+      "StudyInstanceUID": "1.3.6.1.4.1.14519.5.2.1.110488099498379184357875876603591114220",
+      "PatientID": "MSB-03527",
+      "Modality": "CT",
+      "series_size_MB": 36.422,
+      "instanceCount": 69,
+      "license_short_name": "CC BY 4.0",
+      "current_url": "s3://idc-open-data/be039f83-b352-43e7-aaa6-4cdef08ea483/*"
+    },
+    {
+      "SeriesInstanceUID": "1.3.6.1.4.1.14519.5.2.1.285955838107908629046452230854123622406",
+      "StudyInstanceUID": "1.3.6.1.4.1.14519.5.2.1.338418853059262081078105874030016013110",
+      "PatientID": "MSB-09006",
+      "Modality": "CT",
+      "series_size_MB": 76.052576,
+      "instanceCount": 144,
+      "license_short_name": "CC BY 4.0",
+      "current_url": "s3://idc-open-data/71ddbc1c-e82b-4239-b3ae-6822828e0e2f/*"
+    },
+    {
+      "SeriesInstanceUID": "1.3.6.1.4.1.14519.5.2.1.240460596421340090402193963471710321522",
+      "StudyInstanceUID": "1.3.6.1.4.1.14519.5.2.1.270627072452407814392265476706620257427",
+      "PatientID": "MSB-00142",
+      "Modality": "CT",
+      "series_size_MB": 76.544214,
+      "instanceCount": 114,
+      "license_short_name": "CC BY 4.0",
+      "current_url": "s3://idc-open-data/97001db0-6606-4566-a7bc-be2a2458de05/*"
+    },
+    {
+      "SeriesInstanceUID": "1.3.6.1.4.1.14519.5.2.1.339935336351660849742364850486606532924",
+      "StudyInstanceUID": "1.3.6.1.4.1.14519.5.2.1.120837917867567819368203762498294058087",
+      "PatientID": "MSB-09348",
+      "Modality": "CT",
+      "series_size_MB": 63.769978,
+      "instanceCount": 121,
+      "license_short_name": "CC BY 4.0",
+      "current_url": "s3://idc-open-data/68fde31b-7d04-465d-8824-9e9ff908d7f5/*"
+    },
+    {
+      "SeriesInstanceUID": "1.3.6.1.4.1.14519.5.2.1.231644445426153947622935220009895752792",
+      "StudyInstanceUID": "1.3.6.1.4.1.14519.5.2.1.98898566611028969887378982658479147755",
+      "PatientID": "MSB-01493",
+      "Modality": "CT",
+      "series_size_MB": 87.661696,
+      "instanceCount": 165,
+      "license_short_name": "CC BY 4.0",
+      "current_url": "s3://idc-open-data/5957ccd5-71e2-4ed8-9866-fba19ca39317/*"
+    },
+    {
+      "SeriesInstanceUID": "1.3.6.1.4.1.14519.5.2.1.6845344429598848411183948345832325100",
+      "StudyInstanceUID": "1.3.6.1.4.1.14519.5.2.1.110488099498379184357875876603591114220",
+      "PatientID": "MSB-03527",
+      "Modality": "CT",
+      "series_size_MB": 36.425036,
+      "instanceCount": 69,
+      "license_short_name": "CC BY 4.0",
+      "current_url": "s3://idc-open-data/4f6897a9-66b0-447e-8e6e-40514855d854/*"
+    },
+    {
+      "SeriesInstanceUID": "1.3.6.1.4.1.14519.5.2.1.190379620224549902907921269603771036892",
+      "StudyInstanceUID": "1.3.6.1.4.1.14519.5.2.1.175426232449050235226739660257601437874",
+      "PatientID": "MSB-06469",
+      "Modality": "CT",
+      "series_size_MB": 250.851432,
+      "instanceCount": 221,
+      "license_short_name": "CC BY 4.0",
+      "current_url": "s3://idc-open-data/06275315-c7da-42f1-914e-07b034021249/*"
+    },
+    {
+      "SeriesInstanceUID": "1.3.6.1.4.1.14519.5.2.1.147221800987750318041281944627766824811",
+      "StudyInstanceUID": "1.3.6.1.4.1.14519.5.2.1.122028485916632775871250287560782562062",
+      "PatientID": "MSB-00142",
+      "Modality": "CT",
+      "series_size_MB": 206.48593,
+      "instanceCount": 391,
+      "license_short_name": "CC BY 4.0",
+      "current_url": "s3://idc-open-data/bfeb49fa-91b0-462f-863c-435141929f27/*"
+    },
+    {
+      "SeriesInstanceUID": "1.3.6.1.4.1.14519.5.2.1.242042571393168866712652310027362608398",
+      "StudyInstanceUID": "1.3.6.1.4.1.14519.5.2.1.299014764032433276060056086793789856513",
+      "PatientID": "MSB-09348",
+      "Modality": "CT",
+      "series_size_MB": 168.295904,
+      "instanceCount": 190,
+      "license_short_name": "CC BY 4.0",
+      "current_url": "s3://idc-open-data/ceff1070-6966-49c3-8aca-31e80d0143ee/*"
+    },
+    {
+      "SeriesInstanceUID": "1.3.6.1.4.1.14519.5.2.1.159732836177436417438076114064889916962",
+      "StudyInstanceUID": "1.3.6.1.4.1.14519.5.2.1.175426232449050235226739660257601437874",
+      "PatientID": "MSB-06469",
+      "Modality": "CT",
+      "series_size_MB": 107.868216,
+      "instanceCount": 145,
+      "license_short_name": "CC BY 4.0",
+      "current_url": "s3://idc-open-data/59f12a5e-76f6-4a28-9008-843b3539232a/*"
+    },
+    {
+      "SeriesInstanceUID": "1.3.6.1.4.1.14519.5.2.1.213280421450528273569545528072882688112",
+      "StudyInstanceUID": "1.3.6.1.4.1.14519.5.2.1.83132859258441401943877858114398446972",
+      "PatientID": "MSB-01493",
+      "Modality": "CT",
+      "series_size_MB": 29.494922,
+      "instanceCount": 56,
+      "license_short_name": "CC BY 4.0",
+      "current_url": "s3://idc-open-data/f708b361-56a2-44ca-83f3-c53f88d729cc/*"
+    },
+    {
+      "SeriesInstanceUID": "1.3.6.1.4.1.14519.5.2.1.266356215087056222598301489166888066925",
+      "StudyInstanceUID": "1.3.6.1.4.1.14519.5.2.1.2849751608432854382976529045987758744",
+      "PatientID": "MSB-01594",
+      "Modality": "CT",
+      "series_size_MB": 26.876336,
+      "instanceCount": 51,
+      "license_short_name": "CC BY 4.0",
+      "current_url": "s3://idc-open-data/5ac305f1-3a0e-4390-8179-b4e7306adb19/*"
+    },
+    {
+      "SeriesInstanceUID": "1.3.6.1.4.1.14519.5.2.1.184363502874440203705910012883442477308",
+      "StudyInstanceUID": "1.3.6.1.4.1.14519.5.2.1.158833728137844707703036557071058768128",
+      "PatientID": "MSB-00142",
+      "Modality": "CT",
+      "series_size_MB": 62.218402,
+      "instanceCount": 108,
+      "license_short_name": "CC BY 4.0",
+      "current_url": "s3://idc-open-data/aa02199a-f4de-4796-88f1-1c1936cffe96/*"
+    },
+    {
+      "SeriesInstanceUID": "1.3.6.1.4.1.14519.5.2.1.208211961977960338631745775516535347243",
+      "StudyInstanceUID": "1.3.6.1.4.1.14519.5.2.1.40675875795373600501817585928433322338",
+      "PatientID": "MSB-00142",
+      "Modality": "CT",
+      "series_size_MB": 80.7488,
+      "instanceCount": 119,
+      "license_short_name": "CC BY 4.0",
+      "current_url": "s3://idc-open-data/a1002955-5a6e-4970-858f-2f9d59f51cf5/*"
+    },
+    {
+      "SeriesInstanceUID": "1.3.6.1.4.1.14519.5.2.1.57887073680027785535149531792892886045",
+      "StudyInstanceUID": "1.3.6.1.4.1.14519.5.2.1.338418853059262081078105874030016013110",
+      "PatientID": "MSB-09006",
+      "Modality": "CT",
+      "series_size_MB": 112.951632,
+      "instanceCount": 201,
+      "license_short_name": "CC BY 4.0",
+      "current_url": "s3://idc-open-data/fbbc0812-c30e-4b8c-a589-039e005b7fff/*"
+    },
+    {
+      "SeriesInstanceUID": "1.3.6.1.4.1.14519.5.2.1.28307965520755427434433184334097379495",
+      "StudyInstanceUID": "1.3.6.1.4.1.14519.5.2.1.190639361446314585845783026007438152542",
+      "PatientID": "MSB-00142",
+      "Modality": "CT",
+      "series_size_MB": 99.048962,
+      "instanceCount": 161,
+      "license_short_name": "CC BY 4.0",
+      "current_url": "s3://idc-open-data/5f03bd9a-618a-4efc-ba96-95f509ba33c8/*"
+    },
+    {
+      "SeriesInstanceUID": "1.3.6.1.4.1.14519.5.2.1.324491226898427404614070488674561607646",
+      "StudyInstanceUID": "1.3.6.1.4.1.14519.5.2.1.245380081716850000484974983856441313026",
+      "PatientID": "MSB-04437",
+      "Modality": "MR",
+      "series_size_MB": 14.930832,
+      "instanceCount": 88,
+      "license_short_name": "CC BY 4.0",
+      "current_url": "s3://idc-open-data/28d46063-e4b7-484b-8daa-ba18f95107da/*"
+    },
+    {
+      "SeriesInstanceUID": "1.3.6.1.4.1.14519.5.2.1.257212356129451914639997220457759155507",
+      "StudyInstanceUID": "1.3.6.1.4.1.14519.5.2.1.272003674664024878927100226410816610381",
+      "PatientID": "MSB-01594",
+      "Modality": "CT",
+      "series_size_MB": 74.308326,
+      "instanceCount": 141,
+      "license_short_name": "CC BY 4.0",
+      "current_url": "s3://idc-open-data/10f77d98-40c5-4155-850f-39d3c7740d8b/*"
+    },
+    {
+      "SeriesInstanceUID": "1.3.6.1.4.1.14519.5.2.1.253718384003633117098813161451894375251",
+      "StudyInstanceUID": "1.3.6.1.4.1.14519.5.2.1.158833728137844707703036557071058768128",
+      "PatientID": "MSB-00142",
+      "Modality": "CT",
+      "series_size_MB": 67.071842,
+      "instanceCount": 99,
+      "license_short_name": "CC BY 4.0",
+      "current_url": "s3://idc-open-data/ff3c8d61-cc3c-4fb9-8e42-d0714207889b/*"
+    },
+    {
+      "SeriesInstanceUID": "1.3.6.1.4.1.14519.5.2.1.131002443224964521053240071219306035821",
+      "StudyInstanceUID": "1.3.6.1.4.1.14519.5.2.1.190639361446314585845783026007438152542",
+      "PatientID": "MSB-00142",
+      "Modality": "CT",
+      "series_size_MB": 210.181774,
+      "instanceCount": 398,
+      "license_short_name": "CC BY 4.0",
+      "current_url": "s3://idc-open-data/3a6b96b1-3578-42b1-9cd2-74ef50d9b908/*"
+    },
+    {
+      "SeriesInstanceUID": "1.3.6.1.4.1.14519.5.2.1.196986427213094905449606632874640666222",
+      "StudyInstanceUID": "1.3.6.1.4.1.14519.5.2.1.175426232449050235226739660257601437874",
+      "PatientID": "MSB-06469",
+      "Modality": "CT",
+      "series_size_MB": 86.029344,
+      "instanceCount": 163,
+      "license_short_name": "CC BY 4.0",
+      "current_url": "s3://idc-open-data/374f8d37-50c5-403f-8534-e557a15efb63/*"
+    },
+    {
+      "SeriesInstanceUID": "1.3.6.1.4.1.14519.5.2.1.234461649499630003186918826969123426608",
+      "StudyInstanceUID": "1.3.6.1.4.1.14519.5.2.1.192738181741149332360600806883809574698",
+      "PatientID": "MSB-06469",
+      "Modality": "CT",
+      "series_size_MB": 43.807588,
+      "instanceCount": 83,
+      "license_short_name": "CC BY 4.0",
+      "current_url": "s3://idc-open-data/43a7b854-9a7b-4cd2-95e5-f2cbe5fd0680/*"
+    },
+    {
+      "SeriesInstanceUID": "1.3.6.1.4.1.14519.5.2.1.335651183229375605819621188664556579265",
+      "StudyInstanceUID": "1.3.6.1.4.1.14519.5.2.1.338418853059262081078105874030016013110",
+      "PatientID": "MSB-09006",
+      "Modality": "CT",
+      "series_size_MB": 86.08467,
+      "instanceCount": 163,
+      "license_short_name": "CC BY 4.0",
+      "current_url": "s3://idc-open-data/9e379428-54c3-4533-86f9-30b8fdc378ab/*"
+    },
+    {
+      "SeriesInstanceUID": "1.3.6.1.4.1.14519.5.2.1.229632039346177048335047901088570791009",
+      "StudyInstanceUID": "1.3.6.1.4.1.14519.5.2.1.122028485916632775871250287560782562062",
+      "PatientID": "MSB-00142",
+      "Modality": "CT",
+      "series_size_MB": 55.449616,
+      "instanceCount": 105,
+      "license_short_name": "CC BY 4.0",
+      "current_url": "s3://idc-open-data/1ebb890d-b56a-4752-8efc-f5d15df461d6/*"
+    },
+    {
+      "SeriesInstanceUID": "1.3.6.1.4.1.14519.5.2.1.334071843296702799677320751769079077691",
+      "StudyInstanceUID": "1.3.6.1.4.1.14519.5.2.1.161067048480179078085643244055855163661",
+      "PatientID": "MSB-09348",
+      "Modality": "CT",
+      "series_size_MB": 41.403652,
+      "instanceCount": 67,
+      "license_short_name": "CC BY 4.0",
+      "current_url": "s3://idc-open-data/d7043ad5-c79e-4641-9806-917a05549446/*"
+    },
+    {
+      "SeriesInstanceUID": "1.3.6.1.4.1.14519.5.2.1.149885963489795121639735426797054299159",
+      "StudyInstanceUID": "1.3.6.1.4.1.14519.5.2.1.335513371787839605506735405227103435632",
+      "PatientID": "MSB-00142",
+      "Modality": "CT",
+      "series_size_MB": 198.568238,
+      "instanceCount": 376,
+      "license_short_name": "CC BY 4.0",
+      "current_url": "s3://idc-open-data/1b3d0091-0dba-42a1-b4e4-4ac8819e3c9a/*"
+    },
+    {
+      "SeriesInstanceUID": "1.3.6.1.4.1.14519.5.2.1.139028541272282999207461674394024845879",
+      "StudyInstanceUID": "1.3.6.1.4.1.14519.5.2.1.305971326806316723153658530749063804500",
+      "PatientID": "MSB-00142",
+      "Modality": "CT",
+      "series_size_MB": 85.556878,
+      "instanceCount": 162,
+      "license_short_name": "CC BY 4.0",
+      "current_url": "s3://idc-open-data/022cc21f-705f-4bfa-93d9-e31afb7b5a57/*"
+    },
+    {
+      "SeriesInstanceUID": "1.3.6.1.4.1.14519.5.2.1.304890658939596413771564789708809440081",
+      "StudyInstanceUID": "1.3.6.1.4.1.14519.5.2.1.295803067592125634179584926522660427966",
+      "PatientID": "MSB-09348",
+      "Modality": "CT",
+      "series_size_MB": 32.162566,
+      "instanceCount": 61,
+      "license_short_name": "CC BY 4.0",
+      "current_url": "s3://idc-open-data/1dc19e50-7d2f-4412-8d09-e2354c1f95a8/*"
+    },
+    {
+      "SeriesInstanceUID": "1.3.6.1.4.1.14519.5.2.1.303235728357637747942463056646817852246",
+      "StudyInstanceUID": "1.3.6.1.4.1.14519.5.2.1.272003674664024878927100226410816610381",
+      "PatientID": "MSB-01594",
+      "Modality": "CT",
+      "series_size_MB": 80.052464,
+      "instanceCount": 152,
+      "license_short_name": "CC BY 4.0",
+      "current_url": "s3://idc-open-data/eae22f94-3d4b-459a-8286-8daf092e6723/*"
+    },
+    {
+      "SeriesInstanceUID": "1.3.6.1.4.1.14519.5.2.1.243756025044047204534735432443855526452",
+      "StudyInstanceUID": "1.3.6.1.4.1.14519.5.2.1.90721326498081553903725012963687896252",
+      "PatientID": "MSB-09348",
+      "Modality": "CT",
+      "series_size_MB": 53.75835,
+      "instanceCount": 102,
+      "license_short_name": "CC BY 4.0",
+      "current_url": "s3://idc-open-data/65dfae5b-e52e-448b-9276-f114ab121ae4/*"
+    },
+    {
+      "SeriesInstanceUID": "1.3.6.1.4.1.14519.5.2.1.164426557816171569659800286362124638277",
+      "StudyInstanceUID": "1.3.6.1.4.1.14519.5.2.1.40675875795373600501817585928433322338",
+      "PatientID": "MSB-00142",
+      "Modality": "CT",
+      "series_size_MB": 81.177262,
+      "instanceCount": 137,
+      "license_short_name": "CC BY 4.0",
+      "current_url": "s3://idc-open-data/eb0733df-d1cd-4b99-91fc-ebbaa2448577/*"
+    },
+    {
+      "SeriesInstanceUID": "1.3.6.1.4.1.14519.5.2.1.237288135149607840487049446914655627941",
+      "StudyInstanceUID": "1.3.6.1.4.1.14519.5.2.1.158833728137844707703036557071058768128",
+      "PatientID": "MSB-00142",
+      "Modality": "CT",
+      "series_size_MB": 98.91321,
+      "instanceCount": 146,
+      "license_short_name": "CC BY 4.0",
+      "current_url": "s3://idc-open-data/7347110e-1803-48b4-8455-7332729e7bdf/*"
+    },
+    {
+      "SeriesInstanceUID": "1.3.6.1.4.1.14519.5.2.1.225645101006869272444953170449579251167",
+      "StudyInstanceUID": "1.3.6.1.4.1.14519.5.2.1.299014764032433276060056086793789856513",
+      "PatientID": "MSB-09348",
+      "Modality": "CT",
+      "series_size_MB": 45.870992,
+      "instanceCount": 87,
+      "license_short_name": "CC BY 4.0",
+      "current_url": "s3://idc-open-data/69ec98b3-1495-4d44-9ac7-4915a2ed02a8/*"
+    },
+    {
+      "SeriesInstanceUID": "1.3.6.1.4.1.14519.5.2.1.90746106517238278936305371802085499403",
+      "StudyInstanceUID": "1.3.6.1.4.1.14519.5.2.1.122028485916632775871250287560782562062",
+      "PatientID": "MSB-00142",
+      "Modality": "CT",
+      "series_size_MB": 55.44984,
+      "instanceCount": 105,
+      "license_short_name": "CC BY 4.0",
+      "current_url": "s3://idc-open-data/0e204933-dbc5-417c-b700-00e7c259b478/*"
+    },
+    {
+      "SeriesInstanceUID": "1.3.6.1.4.1.14519.5.2.1.4458635423182389168172730858059213574",
+      "StudyInstanceUID": "1.3.6.1.4.1.14519.5.2.1.40705926155079825013155259236860868884",
+      "PatientID": "MSB-09102",
+      "Modality": "CT",
+      "series_size_MB": 106.285726,
+      "instanceCount": 149,
+      "license_short_name": "CC BY 4.0",
+      "current_url": "s3://idc-open-data/780c27cf-8d26-4af5-a4b4-820059fb4d0a/*"
+    },
+    {
+      "SeriesInstanceUID": "1.3.6.1.4.1.14519.5.2.1.329517818476306357330061178783660257677",
+      "StudyInstanceUID": "1.3.6.1.4.1.14519.5.2.1.40675875795373600501817585928433322338",
+      "PatientID": "MSB-00142",
+      "Modality": "CT",
+      "series_size_MB": 75.43705,
+      "instanceCount": 126,
+      "license_short_name": "CC BY 4.0",
+      "current_url": "s3://idc-open-data/3c3ad759-f219-4860-bc3d-8a2f641a40fd/*"
+    },
+    {
+      "SeriesInstanceUID": "1.3.6.1.4.1.14519.5.2.1.271291800767206955995236208739613194836",
+      "StudyInstanceUID": "1.3.6.1.4.1.14519.5.2.1.244218112530383286609623163724698853359",
+      "PatientID": "MSB-01842",
+      "Modality": "CT",
+      "series_size_MB": 111.95118,
+      "instanceCount": 151,
+      "license_short_name": "CC BY 4.0",
+      "current_url": "s3://idc-open-data/5ab732af-d179-46c9-ab8d-5bdd9570dae2/*"
+    },
+    {
+      "SeriesInstanceUID": "1.3.6.1.4.1.14519.5.2.1.131503016993450853985212801547554952934",
+      "StudyInstanceUID": "1.3.6.1.4.1.14519.5.2.1.40675875795373600501817585928433322338",
+      "PatientID": "MSB-00142",
+      "Modality": "CT",
+      "series_size_MB": 94.363778,
+      "instanceCount": 156,
+      "license_short_name": "CC BY 4.0",
+      "current_url": "s3://idc-open-data/58b79ed1-5e3a-49d0-a225-f73665ea14d4/*"
+    },
+    {
+      "SeriesInstanceUID": "1.3.6.1.4.1.14519.5.2.1.209496966374666320204293063125917930901",
+      "StudyInstanceUID": "1.3.6.1.4.1.14519.5.2.1.245380081716850000484974983856441313026",
+      "PatientID": "MSB-04437",
+      "Modality": "MR",
+      "series_size_MB": 14.930828,
+      "instanceCount": 88,
+      "license_short_name": "CC BY 4.0",
+      "current_url": "s3://idc-open-data/1559b502-32c0-4e96-9b7a-acb671951197/*"
+    },
+    {
+      "SeriesInstanceUID": "1.3.6.1.4.1.14519.5.2.1.71982500741866000194626823540671098910",
+      "StudyInstanceUID": "1.3.6.1.4.1.14519.5.2.1.98898566611028969887378982658479147755",
+      "PatientID": "MSB-01493",
+      "Modality": "CT",
+      "series_size_MB": 44.813812,
+      "instanceCount": 85,
+      "license_short_name": "CC BY 4.0",
+      "current_url": "s3://idc-open-data/c771fa3b-8df7-43d4-a327-b96f84452182/*"
+    },
+    {
+      "SeriesInstanceUID": "1.3.6.1.4.1.14519.5.2.1.59911594848415274874700621099740678033",
+      "StudyInstanceUID": "1.3.6.1.4.1.14519.5.2.1.228246448982084761777803439641099382419",
+      "PatientID": "MSB-09006",
+      "Modality": "CT",
+      "series_size_MB": 69.64037,
+      "instanceCount": 107,
+      "license_short_name": "CC BY 4.0",
+      "current_url": "s3://idc-open-data/bc55c929-e8de-4f1c-af99-4a12c1d41d08/*"
+    },
+    {
+      "SeriesInstanceUID": "1.3.6.1.4.1.14519.5.2.1.217137290435641348573870896906519358049",
+      "StudyInstanceUID": "1.3.6.1.4.1.14519.5.2.1.284075587248345343933019152511170685676",
+      "PatientID": "MSB-03527",
+      "Modality": "CT",
+      "series_size_MB": 32.196656,
+      "instanceCount": 61,
+      "license_short_name": "CC BY 4.0",
+      "current_url": "s3://idc-open-data/58e38052-8d4b-4d24-b8e6-beeeaa5e542f/*"
+    },
+    {
+      "SeriesInstanceUID": "1.3.6.1.4.1.14519.5.2.1.80384704063894370127207982662464558085",
+      "StudyInstanceUID": "1.3.6.1.4.1.14519.5.2.1.85144673047777774819850113854233921141",
+      "PatientID": "MSB-01594",
+      "Modality": "CT",
+      "series_size_MB": 184.874466,
+      "instanceCount": 351,
+      "license_short_name": "CC BY 4.0",
+      "current_url": "s3://idc-open-data/d71760a2-d232-42fe-930d-bba79f8ac68a/*"
+    },
+    {
+      "SeriesInstanceUID": "1.3.6.1.4.1.14519.5.2.1.1.11308827314503608081064055930390854588",
+      "StudyInstanceUID": "1.3.6.1.4.1.14519.5.2.1.1.45192490094368746596088726994491747954",
+      "PatientID": "MSB-06857",
+      "Modality": "CT",
+      "series_size_MB": 78.724756,
+      "instanceCount": 82,
+      "license_short_name": "CC BY 4.0",
+      "current_url": "s3://idc-open-data/fcf7f3ab-adb9-4bd5-a79d-ac61d0257f07/*"
+    },
+    {
+      "SeriesInstanceUID": "1.3.6.1.4.1.14519.5.2.1.336802837983950545893700417512994205498",
+      "StudyInstanceUID": "1.3.6.1.4.1.14519.5.2.1.244218112530383286609623163724698853359",
+      "PatientID": "MSB-01842",
+      "Modality": "CT",
+      "series_size_MB": 72.330058,
+      "instanceCount": 125,
+      "license_short_name": "CC BY 4.0",
+      "current_url": "s3://idc-open-data/ae5667ef-2d46-4750-af03-fdee895b53e9/*"
+    }
+  ],
+  "tdr_version": "0.1.0rc2",
+  "tdr_source_commit": "2dcad4bd6fe0bd62b42e67834d0ad42240694f42"
+}

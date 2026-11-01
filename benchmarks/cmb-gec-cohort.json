@@ -1,7 +1,7 @@
 {
   "idc_version": "v25",
   "collection": "CMB-GEC",
-  "tdr_source_commit": "618d8bc4e493cabc20b9afc41d54a3ce8a2b0df5",
+  "tdr_source_commit": "2dcad4bd6fe0bd62b42e67834d0ad42240694f42",
   "source_manifest_sha256": "c49654b1c9e2f24e63da15ecc8279e83c42b0790e3b3460d65805e9d20f45a86",
   "series": [
     {
@@ -24,5 +24,6 @@
       "current_url": "s3://idc-open-data/5f770d9d-57f7-43a6-8e3c-5d707035c269/*",
       "license_short_name": "CC BY 4.0"
     }
-  ]
+  ],
+  "tdr_version": "0.1.0rc2"
 }

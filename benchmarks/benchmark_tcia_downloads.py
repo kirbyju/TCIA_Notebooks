@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import argparse
 from datetime import datetime, timezone
+from decimal import Decimal
 import hashlib
 from importlib.metadata import version
 import json
@@ -14,6 +15,7 @@ import os
 from pathlib import Path
 import platform
 import signal
+import shutil
 import statistics
 import subprocess
 import sys
@@ -41,6 +43,10 @@ def inventory(directory, cohort):
         counts[uid] += 1
     if counts != expected:
         raise RuntimeError(f'DICOM instance counts differ: {counts} vs {expected}')
+    expected_bytes = int(sum(Decimal(str(row['series_size_MB'])) * 1_000_000
+                             for row in cohort['series']))
+    if size != expected_bytes:
+        raise RuntimeError(f'DICOM payload size differs: {size} vs {expected_bytes}')
     fingerprint = hashlib.sha256(json.dumps(objects, sort_keys=True).encode()).hexdigest()
     return {'instances': len(objects), 'payload_bytes': size, 'fingerprint': fingerprint,
             'series_instance_counts': counts}
@@ -81,7 +87,9 @@ def trial(engine, cohort_path, destination, result_path, warm=False):
                 started = perf_counter()
             engine_report = tdr.download(manifest, destination, accept_data_policy=True,
                                          skip_existing=False, max_retries=0)
-            if engine_report['total'] != len(cohort['series']):
+            if (engine_report['total'] != len(cohort['series'])
+                    or engine_report['failed'] != 0
+                    or engine_report['status'] != 'success'):
                 raise RuntimeError('TDR did not account for all selected series')
         else:
             from idc_index import IDCClient
@@ -134,6 +142,14 @@ def run(cohort_path, output, repeats=3, max_total_mb=1000, timeout=180, warm=Fal
         raise ValueError('Selection exceeds the configured total payload budget')
     if output.exists():
         raise ValueError('Use a fresh benchmark output directory')
+    if shutil.disk_usage(output.parent).free < planned * 1.1:
+        raise ValueError('Insufficient free disk space for all fresh trial copies')
+    import tcia_data_retriever as tdr
+    build = tdr.build_info()
+    if cohort.get('tdr_version') and build['version'] != cohort['tdr_version']:
+        raise ValueError('TDR version differs from the pinned cohort; restart the runtime after installing')
+    if cohort.get('tdr_source_commit') and build['git_commit'] != cohort['tdr_source_commit']:
+        raise ValueError('TDR source revision differs from the pinned cohort')
     output.mkdir(parents=True)
     results = []
     report = {'observed_at_utc': datetime.now(timezone.utc).isoformat(),
@@ -146,8 +162,7 @@ def run(cohort_path, output, repeats=3, max_total_mb=1000, timeout=180, warm=Fal
               'settings': {'tdr_processes': 8, 'tdr_max_retries': 0,
                            'idc_workers': 'package default', 'idc_retries': 'package default',
                            'idc_sync': False}, 'trials': results}
-    import tcia_data_retriever as tdr
-    report['tdr_build'] = tdr.build_info()
+    report['tdr_build'] = build
     script = Path(__file__).resolve()
     for repeat in range(repeats):
         order = ['tdr', 'idc'] if repeat % 2 == 0 else ['idc', 'tdr']
@@ -193,7 +208,7 @@ def run(cohort_path, output, repeats=3, max_total_mb=1000, timeout=180, warm=Fal
         report['summary'].append({'engine': engine, 'trials': len(rows),
             'median_seconds': statistics.median(r['elapsed_seconds'] for r in rows),
             'median_MiB_per_second': statistics.median(r['MiB_per_second'] for r in rows)})
-    report['limitations'] = ['Small CT/MR pilot; no large-file or controlled-access speed claim.',
+    report['limitations'] = ['Public CT/MR cohort only; no controlled-access or non-DICOM speed claim.',
         'Fresh local destinations do not clear remote/CDN caches.',
         'Default concurrency differs; TDR retries disabled; IDC uses package defaults.',
         'Cold elapsed time includes imports, index/preparation and transfer; warm mode excludes client initialization.',
