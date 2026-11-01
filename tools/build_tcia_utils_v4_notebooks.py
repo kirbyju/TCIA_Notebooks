@@ -24,6 +24,8 @@ Our main example is [CMB-GEC](https://www.cancerimagingarchive.net/collection/cm
 
 Use Python **3.11 or newer**. The installation cell sets up the packages used in this lab. This notebook is self-contained: you do not need other files from the repository.
 
+Use a fresh output folder for the first run of this updated notebook; older download layouts are not converted automatically.
+
 Running all cells queries real, public metadata, saves manifests and tables, and downloads the public image samples described below. Each public download uses `max_items=1` to select one whole series or file. Controlled downloads require your own approved access and remain off until you enable them. You do not need an LLM account to use this notebook.''')
 
 md(r'''## Let's get set up
@@ -34,7 +36,7 @@ Run the next cell to install the packages used in this lab. In Colab, run the no
 
 code(r'''import subprocess, sys
 subprocess.check_call(
-    [sys.executable, "-m", "pip", "install", "tcia_utils[tables,downloads]==4.0.0a6", "nibabel>=5,<6"]
+    [sys.executable, "-m", "pip", "install", "tcia_utils[tables,downloads,cohorts]==4.0.0a7", "nibabel>=5,<6"]
 )''', tags=['installation'])
 
 code(r'''from pathlib import Path
@@ -55,10 +57,10 @@ from tcia_utils import TCIAClient, DownloadError
 assert hasattr(tcia_utils, "format_table") and all(
     hasattr(TCIAClient, method)
     for method in ("download_manifest", "plan_participant_images", "download_images")
-) and "resume" in inspect.signature(TCIAClient.download_manifest).parameters, "Run the installation cell for tcia_utils 4.0.0a6, restart your Python/Colab runtime, then run from the top."
+) and "accept_data_policy" in inspect.signature(TCIAClient.download_manifest).parameters, "Run the installation cell for tcia_utils 4.0.0a7, restart your Python/Colab runtime, then run from the top."
 format_table = tcia_utils.format_table
 pd.set_option("display.max_colwidth", 85)
-OUTPUT = Path(os.environ.get("TCIA_EXAMPLE_OUTPUT_DIR", "tcia-workshop-output"))
+OUTPUT = Path(os.environ.get("TCIA_EXAMPLE_OUTPUT_DIR", "tcia-workshop-files"))
 OUTPUT.mkdir(parents=True, exist_ok=True)
 BASE_URL = os.environ.get("TCIA_REST_BASE_URL", "https://tcia.duckdns.org")
 tcia = TCIAClient(base_url=BASE_URL, timeout=120, pin_snapshot=True)
@@ -206,9 +208,11 @@ display(manifest_report.to_dataframe())''')
 
 md(r'''### Download directly from Python
 
-Let's start with the **public DICOM imaging group**. We already saved its manifest, so we can pass that file straight to `tcia.download_manifest()`. The package reads the identifiers and handles the transfer; we do not need to parse the file ourselves. It prints “Preparing download selection…” immediately. The first public DICOM call prepares its imaging index; later calls through the same `tcia` client reuse it. Download progress appears automatically after preparation.
+Let's start with the **public DICOM imaging group**. We already saved its manifest, so we can pass that file straight to `tcia.download_manifest()`. The package reads the identifiers and handles the transfer; we do not need to parse the file ourselves. It prints “Preparing download selection…” immediately and shows transfer progress automatically. The setup cell installs the transfer package; download calls do not install software.
 
 This function accepts a **local path or an HTTPS URL**, for either a `.tcia` manifest or a supported CSV/TSV manifest. It reads the manifest's route column and chooses the appropriate download method. If part of the requested selection is unavailable, it tells us rather than silently dropping those files.
+
+Before running a download cell, read the [TCIA data usage policy](https://www.cancerimagingarchive.net/data-usage-policies-and-restrictions/). The calls below use `accept_data_policy=True` to record your acceptance. Run them only if you agree to that policy.
 
 Before a large download, let's **try one item**. Passing `max_items=1` downloads the first whole DICOM series or file in the manifest. This is a real transfer, so it can help us check the setup and inspect the data. A whole series or file can still be large: this option limits the number of items, not the number of bytes.
 
@@ -216,14 +220,14 @@ Run the next cell to download one DICOM series into a sample folder. The report 
 
 After checking the sample, use a separate destination and omit `max_items` to request the full manifest.
 
-Normal downloads start without scanning existing images; files already present may be downloaded again. To continue an interrupted **public DICOM** download, keep the same destination and add `resume=True`. This checks which files still need downloading before the transfer bar appears, so that check can take a few minutes for a large selection. It does not add partial-file resume for other file types. A successful sample does not establish that every remaining item is available or that an image and segmentation match.''')
+Normal downloads request a new copy; files already present may be downloaded again. To continue an interrupted download, keep the same destination and add `resume=True`. The transfer package checks existing files according to its supported routes. This is not a guarantee of resuming at the exact byte where a connection stopped. ZIP archives may be extracted automatically. A successful sample does not establish that every remaining item is available or that an image and segmentation match.''')
 
 code(r'''public_manifest = next(
     item for item in saved_manifests if item["route_column"] == "SeriesInstanceUID"
 )
 
 report = tcia.download_manifest(
-    OUTPUT / public_manifest["manifest"], OUTPUT / "samples" / DATASET, max_items=1
+    OUTPUT / public_manifest["manifest"], OUTPUT / "samples" / DATASET, max_items=1, accept_data_policy=True
 )
 display(report.to_dataframe())''', tags=['sample-download'])
 
@@ -235,7 +239,7 @@ Other collections may offer non-DICOM files through Python-supported manifests o
 
 md(r'''### Download the controlled group after approval
 
-For controlled images, the Python function also needs the **path** to your own JSON API key. It uses the official file identifiers and the authorized service. It does not print or copy the key. Don't paste key contents into a notebook, repository, or chat.
+For controlled images, the Python function also needs the **path** to your own JSON API key. It uses the official file identifiers and the authorized service. The transfer package may save a private copy of the key in its local application cache. See its [credential-storage guidance](https://github.com/TCIA/data-retriever/blob/618d8bc4e493cabc20b9afc41d54a3ce8a2b0df5/python/README.md). Use an isolated or temporary environment if you do not want that credential retained on this computer. Don't paste key contents into a notebook, repository, or chat.
 
 Leave the next cell unchanged to continue without a controlled download. An approved user can enter a key-file path and set `DOWNLOAD_CONTROLLED_CMB = True` to try the first file in the manifest. It still needs the same authorization as a larger download. Authorization for one study may not cover another.''')
 
@@ -248,6 +252,7 @@ if DOWNLOAD_CONTROLLED_CMB:
         controlled_manifest["url"],  # A URL works just like a local manifest path.
         OUTPUT / "samples" / DATASET,
         credential_file=CREDENTIAL_FILE,
+        accept_data_policy=True,
         max_items=1,
     )
     display(report.to_dataframe())
@@ -490,7 +495,7 @@ if ct_images.unresolved:
     display(pd.DataFrame(ct_images.unresolved))
 
 if ct_images.rows:
-    report = tcia.download_images(ct_images, OUTPUT / "clinical-ct-sample", max_items=1)
+    report = tcia.download_images(ct_images, OUTPUT / "clinical-ct-sample", max_items=1, accept_data_policy=True)
     display(report.to_dataframe())
 else:
     print("No matching public CT series were found.")''', tags=['sample-download'])
@@ -517,7 +522,7 @@ if slide_images.unresolved:
     display(pd.DataFrame(slide_images.unresolved))
 
 if slide_images.rows:
-    report = tcia.download_images(slide_images, OUTPUT / "clinical-slide-sample", max_items=1)
+    report = tcia.download_images(slide_images, OUTPUT / "clinical-slide-sample", max_items=1, accept_data_policy=True)
     display(report.to_dataframe())
 else:
     print("No matching public slides were found.")''', tags=['sample-download'])
@@ -798,6 +803,7 @@ if DOWNLOAD_CONTROLLED_CT:
         face_selection,
         OUTPUT / FACE_COLLECTION / "selected-ct-seg",
         credential_file=CREDENTIAL_FILE,
+        accept_data_policy=True,
         max_items=2,
     )
     display(report.to_dataframe())
@@ -860,7 +866,7 @@ Useful links: [TCIA Dataset Explorer](https://www.cancerimagingarchive.net/datas
 notebook = nbf.v4.new_notebook(cells=cells, metadata={
     "kernelspec": {"display_name":"Python 3", "language":"python", "name":"python3"},
     "language_info": {"name":"python", "version":"3.11"},
-    "tcia_workshop": {"package_version":"4.0.0a6", "default_mode":"live_public_samples",
+    "tcia_workshop": {"package_version":"4.0.0a7", "default_mode":"live_public_samples",
         "payload_downloads_default":True, "public_sample_max_items":1,
         "controlled_downloads_default":False, "audience":"junior data scientists"}})
 for i, cell in enumerate(notebook.cells): cell.id = f"tcia-workshop-{i:02d}"

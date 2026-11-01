@@ -2,67 +2,66 @@
 
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/kirbyju/TCIA_Notebooks/blob/main/tcia_utils_v4/TCIA_Dataset_and_Participant_Queries.ipynb)
 
-The single workshop is written for junior data scientists. It covers CMB-GEC
-whole-dataset discovery and download planning, CT/diagnosis cohorts across CMB-GEC
-and CMB-LCA, public brain MR/NIfTI segmentation metadata, and controlled CT/SEG
+The single guided workshop is written for junior data scientists. It covers
+CMB-GEC dataset discovery and downloads, CT/diagnosis cohorts across CMB-GEC and
+CMB-LCA, public brain MR/NIfTI segmentation metadata, and controlled CT/SEG
 candidate selection. It explains public versus controlled access and DICOM versus
-other formats without teaching the hosting infrastructure.
+other formats without requiring knowledge of the hosting infrastructure.
 
-The workshop installs the 4.0.0a6 preview from PyPI in Python 3.11+. In Colab,
-run the installation cell, restart the runtime if prompted, and run from the top.
-The hosted REST service must include the shared download-plan and explicit public
-slide-file descriptors. Set TCIA_REST_BASE_URL for another updated service.
+The workshop installs tcia_utils 4.0.0a7 for Python 3.11+. In Colab, run the setup
+cell and restart the runtime when prompted. The hosted REST service must include
+the existing shared download plan, public slide descriptors and list-valued
+attributes. This transfer-engine update needs no new server routes or bundle.
 
-The download scope is Python and pip-installed dependencies. Public DICOM delegates
-to idc-index (including its pip-supplied transfer executable); public HTTPS and
-approved controlled files use Python HTTP streaming. No Data Retriever or Aspera
-CLI is installed or executed. External-only groups remain in metadata with their
-published software requirements, counts, and official links. Separate software
-notebooks cover those applications. Downloading a supported subset is not full
-collection acquisition.
+All supported image/file transfers now delegate to the pip-installed
+`tcia-data-retriever==0.1.0rc1`. It bundles the headless transfer executable;
+readers do not install Go, Node, a desktop application or another executable.
+The `downloads` extra installs it. The separate `cohorts` extra supplies IDC's
+public DICOM index for cohort/series metadata; IDC is not the transfer backend.
+The tutorial setup installs both extras. Data Retriever owns transfer retries,
+checksums, output layout, skip-existing behavior and archive extraction.
 
-Download tables include patients/subjects, studies, series and images for each
-full group. Missing counts display as “Not reported”; CSVs keep missing values,
-and zero stays zero. Overlapping groups must not be summed as unique people.
+Read the TCIA data usage policy before running transfer cells. Those calls pass
+accept_data_policy=True explicitly. The three public sample cells run directly,
+each with max_items=1. These limits count whole series/files, not bytes. Controlled
+examples remain off until an approved reader supplies their own key and enables
+them. resume=True requests the transfer package's skip-existing behavior; it is
+not a guarantee of partial-file byte-range resume. Ordinary copy mode can download
+existing files again. Progress is shown by default. The current TDR Python wrapper
+inherits console output even if SDK progress messages are disabled.
 
-The three public image sample cells download when run, each with max_items=1.
-Controlled downloads stay off until an approved reader enables them. The controlled
-manifest demo uses max_items=1; the CT/SEG candidate demo keeps one file of each
-modality with max_items=2. These limits count whole series/files, not bytes.
-Progress is displayed by default. Preparation status appears before index loading;
-the same client reuses the index. Downloads use normal copy behavior by default,
-including after a sample. To continue an interrupted public DICOM download, pass
-resume=True and reuse the same destination. The synchronization scan runs before
-the transfer bar and may take time. Other file routes retain their existing
-size/checksum and overwrite behavior without partial-file resume.
+The current transfer package may keep a private copy of a supplied controlled key
+in its application cache. Its guide documents the platform-specific behavior.
+Use an isolated/temporary runtime when credential persistence is inappropriate.
+The metadata service and SDK reports do not contain keys, tokens or signed URLs.
+No real controlled-access transfer was used to validate this update.
 
-Controlled transfers require the reader's approved JSON key-file path. No key
-contents appear in the notebook, reports or metadata service. Python currently
-uses a narrow httpx-based CRDC authorization adapter, not a general DRS client.
-HTTP downloads check available sizes/checksums and restart rather than resume
-interrupted files. Exact CT/SEG references and image quality need checking after
-authorized transfer. Indexed paths inside archives are not per-file download URLs.
+External-only Aspera groups remain in the inventory with counts, published
+requirements and official links. Separate application notebooks cover them.
+Downloading supported groups is not proof of acquiring an entire collection.
+Download tables show published full-group subjects/studies/series/images; counts
+may overlap, and missing counts are not zero. Multi-value attributes remain lists.
+The format_table helper adds display-only missing labels without changing exports.
 
-Maintainer checks use tools/test_workshop.py and tools/run_tcia_workshop.py.
-Fixture mode preserves the public recording's original observation time and
-fingerprint. Local shared-plan projections are explicitly marked; they do not
-establish a deployed API or current research result. See validation/ for historical
-checks. Validation prohibits credentials and imaging payloads. The recorded replay
-skips installation and exercises an installed wheel. In the validation-only copy,
-the three public sample calls use dry_run=True; controlled transfers remain off.
-Independent HTTP and subprocess guards also prohibit image transfers.
+Maintainer checks use tools/test_workshop.py and tools/run_tcia_workshop.py. The
+runner exercises the installed wheel with recorded public metadata. Its private
+validation copy uses dry_run=True and accept_data_policy=False for public sample
+calls; controlled examples remain off. Independent HTTP/subprocess guards block
+image transfers. Recorded metadata and local projections are not deployment proof.
 
-The clinical section now ends with two CMB-LCA cohort downloads.
-`plan_participant_images()` inventories public CT series or non-DICOM slide files
-for exactly the clinically filtered participants; `download_images(..., max_items=1)`
-uses the existing Python adapters for a one-item sample when the cell runs. Coverage includes
-zero-match participants and unresolved routes block execution. Public slide copies
-may be reformatted; they are not asserted equivalent to submitted originals.
-The new explicit slide descriptors require the matching local API changes.
-The added recording is bound to the same TCIA fingerprint as the earlier fixture,
-with a separately identified bundled-IDC metadata subset and observation time.
+The clinically filtered cohort examples plan public CMB-LCA CT or slide files for
+exactly the selected participants. Coverage includes zero matches; unresolved
+routes stop execution. Public slide copies may have been reformatted and are not
+asserted equivalent to the submitter's originals. Indexed paths inside an archive
+are not invented standalone download URLs. Check exact scan/segmentation pairing
+and geometry before analysis.
 
-Multi-value dataset and download attributes are lists, including singleton and
-empty values. This requires the coordinated REST/MCP response update. Download
-tables use the SDK's format_table() display helper, which keeps raw query/export
-values intact and avoids pandas implicit-downcasting warnings.
+A separate [downloader benchmark](../benchmarks/TCIA_Downloader_Comparison.ipynb)
+compares the two released interfaces on identical public CMB-GEC objects. It has
+fresh-process and prepared-client cases, alternating trials, fresh destinations,
+package/source provenance and DICOM count/hash verification. The small local pilot
+is not a universal speed claim; the Colab notebook allows a second environment.
+
+Use a fresh destination when moving from earlier download backends. The default
+workshop folder is now tcia-workshop-files. resume=True continues TDR-owned
+downloads; it does not import or migrate an earlier IDC/HTTP output tree.

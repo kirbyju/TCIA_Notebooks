@@ -1,0 +1,28 @@
+{
+  "idc_version": "v25",
+  "collection": "CMB-GEC",
+  "tdr_source_commit": "618d8bc4e493cabc20b9afc41d54a3ce8a2b0df5",
+  "source_manifest_sha256": "c49654b1c9e2f24e63da15ecc8279e83c42b0790e3b3460d65805e9d20f45a86",
+  "series": [
+    {
+      "SeriesInstanceUID": "1.3.6.1.4.1.14519.5.2.1.290156256655956441687973099292341977617",
+      "StudyInstanceUID": "1.3.6.1.4.1.14519.5.2.1.202140194759751273168695877937723717335",
+      "PatientID": "MSB-04437",
+      "Modality": "CT",
+      "series_size_MB": 16.924496,
+      "instanceCount": 32,
+      "current_url": "s3://idc-open-data/0d904629-788e-488a-a6d7-330984c94aaf/*",
+      "license_short_name": "CC BY 4.0"
+    },
+    {
+      "SeriesInstanceUID": "1.3.6.1.4.1.14519.5.2.1.211954693908121002876720024519773672519",
+      "StudyInstanceUID": "1.3.6.1.4.1.14519.5.2.1.245380081716850000484974983856441313026",
+      "PatientID": "MSB-04437",
+      "Modality": "MR",
+      "series_size_MB": 12.088898,
+      "instanceCount": 64,
+      "current_url": "s3://idc-open-data/5f770d9d-57f7-43a6-8e3c-5d707035c269/*",
+      "license_short_name": "CC BY 4.0"
+    }
+  ]
+}
