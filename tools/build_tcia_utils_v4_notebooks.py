@@ -34,7 +34,7 @@ Run the next cell to install the packages used in this lab. In Colab, run the no
 
 code(r'''import subprocess, sys
 subprocess.check_call(
-    [sys.executable, "-m", "pip", "install", "tcia_utils[tables,downloads]==4.0.0a5", "nibabel>=5,<6"]
+    [sys.executable, "-m", "pip", "install", "tcia_utils[tables,downloads]==4.0.0a6", "nibabel>=5,<6"]
 )''', tags=['installation'])
 
 code(r'''from pathlib import Path
@@ -42,6 +42,7 @@ from importlib.metadata import version
 from datetime import datetime, timezone
 from urllib.parse import urlsplit
 import hashlib
+import inspect
 import json
 import os
 
@@ -54,7 +55,7 @@ from tcia_utils import TCIAClient, DownloadError
 assert hasattr(tcia_utils, "format_table") and all(
     hasattr(TCIAClient, method)
     for method in ("download_manifest", "plan_participant_images", "download_images")
-), "Run the installation cell for tcia_utils 4.0.0a5, restart your Python/Colab runtime, then run from the top."
+) and "resume" in inspect.signature(TCIAClient.download_manifest).parameters, "Run the installation cell for tcia_utils 4.0.0a6, restart your Python/Colab runtime, then run from the top."
 format_table = tcia_utils.format_table
 pd.set_option("display.max_colwidth", 85)
 OUTPUT = Path(os.environ.get("TCIA_EXAMPLE_OUTPUT_DIR", "tcia-workshop-output"))
@@ -213,7 +214,9 @@ Before a large download, let's **try one item**. Passing `max_items=1` downloads
 
 Run the next cell to download one DICOM series into a sample folder. The report shows how many items were selected and how many were available. These are the first items in the supplied order, so they may not represent every kind of data in the collection.
 
-After checking the sample, use a separate destination and omit `max_items` to request the full manifest. A successful sample does not establish that every remaining item is available or that an image and segmentation match.''')
+After checking the sample, use a separate destination and omit `max_items` to request the full manifest.
+
+Normal downloads start without scanning existing images; files already present may be downloaded again. To continue an interrupted **public DICOM** download, keep the same destination and add `resume=True`. This checks which files still need downloading before the transfer bar appears, so that check can take a few minutes for a large selection. It does not add partial-file resume for other file types. A successful sample does not establish that every remaining item is available or that an image and segmentation match.''')
 
 code(r'''public_manifest = next(
     item for item in saved_manifests if item["route_column"] == "SeriesInstanceUID"
@@ -857,7 +860,7 @@ Useful links: [TCIA Dataset Explorer](https://www.cancerimagingarchive.net/datas
 notebook = nbf.v4.new_notebook(cells=cells, metadata={
     "kernelspec": {"display_name":"Python 3", "language":"python", "name":"python3"},
     "language_info": {"name":"python", "version":"3.11"},
-    "tcia_workshop": {"package_version":"4.0.0a5", "default_mode":"live_public_samples",
+    "tcia_workshop": {"package_version":"4.0.0a6", "default_mode":"live_public_samples",
         "payload_downloads_default":True, "public_sample_max_items":1,
         "controlled_downloads_default":False, "audience":"junior data scientists"}})
 for i, cell in enumerate(notebook.cells): cell.id = f"tcia-workshop-{i:02d}"
