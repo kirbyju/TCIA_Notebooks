@@ -1,0 +1,258 @@
+{
+  "observed_date": "2026-11-01",
+  "environment": "macOS arm64 local pilot",
+  "source": "CMB-GEC public DICOM; exact matching S3 objects",
+  "modes": [
+    {
+      "observed_at_utc": "2026-11-01T11:38:59.493172+00:00",
+      "python": "3.12.1",
+      "versions": {
+        "tcia-data-retriever": "0.1.0rc1",
+        "idc-index": "0.13.4",
+        "idc-index-data": "25.0.5",
+        "pydicom": "3.0.2"
+      },
+      "tdr_build": {
+        "version": "0.1.0rc1",
+        "sha256": "04fcac066bf837e313229d8437244407f0e2759385efedfcec03efe63b769f30",
+        "git_commit": "618d8bc4e493cabc20b9afc41d54a3ce8a2b0df5"
+      },
+      "cohort_sha256": "a273fa46857aeee1de35fa2a5bf139ce610243a8559fe897b0dfa6312050da06",
+      "mode": "fresh-process end-to-end",
+      "settings": {
+        "tdr_processes": 8,
+        "tdr_max_retries": 0,
+        "idc_workers": "package default",
+        "idc_retries": "package default",
+        "idc_sync": false
+      },
+      "status": "success",
+      "all_payloads_identical": true,
+      "summary": [
+        {
+          "engine": "tdr",
+          "trials": 3,
+          "median_seconds": 2.6009520000079647,
+          "median_MiB_per_second": 10.638154294846835
+        },
+        {
+          "engine": "idc",
+          "trials": 3,
+          "median_seconds": 4.615484915993875,
+          "median_MiB_per_second": 5.994890936311732
+        }
+      ],
+      "limitations": [
+        "Small CT/MR pilot; no large-file or controlled-access speed claim.",
+        "Fresh local destinations do not clear remote/CDN caches.",
+        "Default concurrency differs; TDR retries disabled; IDC uses package defaults.",
+        "Cold elapsed time includes imports, index/preparation and transfer; warm mode excludes client initialization.",
+        "Warm IDC uses a metadata-only preparation call with transfer intercepted; TDR always starts its packaged executable per call.",
+        "Installation, source validation and post-download verification are not timed.",
+        "First visible DICOM is a filesystem observation, not a network first-byte measurement."
+      ],
+      "trials": [
+        {
+          "engine": "tdr",
+          "repeat": 1,
+          "elapsed_seconds": 5.866485167003702,
+          "first_dicom_visible_seconds": 2.6270668749930337,
+          "MiB_per_second": 4.716508761532804,
+          "instances": 96,
+          "payload_bytes": 29013394,
+          "fingerprint": "2bfd1b5743929f01aa4a5d85c6af3478eaab92720415efdebfac31116d27630c"
+        },
+        {
+          "engine": "idc",
+          "repeat": 1,
+          "elapsed_seconds": 4.932469125982607,
+          "first_dicom_visible_seconds": 4.337852708995342,
+          "MiB_per_second": 5.609630386497987,
+          "instances": 96,
+          "payload_bytes": 29013394,
+          "fingerprint": "2bfd1b5743929f01aa4a5d85c6af3478eaab92720415efdebfac31116d27630c"
+        },
+        {
+          "engine": "idc",
+          "repeat": 2,
+          "elapsed_seconds": 4.615484915993875,
+          "first_dicom_visible_seconds": 4.02228483298677,
+          "MiB_per_second": 5.994890936311732,
+          "instances": 96,
+          "payload_bytes": 29013394,
+          "fingerprint": "2bfd1b5743929f01aa4a5d85c6af3478eaab92720415efdebfac31116d27630c"
+        },
+        {
+          "engine": "tdr",
+          "repeat": 2,
+          "elapsed_seconds": 2.6009520000079647,
+          "first_dicom_visible_seconds": 2.1464076670235954,
+          "MiB_per_second": 10.638154294846835,
+          "instances": 96,
+          "payload_bytes": 29013394,
+          "fingerprint": "2bfd1b5743929f01aa4a5d85c6af3478eaab92720415efdebfac31116d27630c"
+        },
+        {
+          "engine": "tdr",
+          "repeat": 3,
+          "elapsed_seconds": 2.4695558749954216,
+          "first_dicom_visible_seconds": 2.239659084007144,
+          "MiB_per_second": 11.204171960525693,
+          "instances": 96,
+          "payload_bytes": 29013394,
+          "fingerprint": "2bfd1b5743929f01aa4a5d85c6af3478eaab92720415efdebfac31116d27630c"
+        },
+        {
+          "engine": "idc",
+          "repeat": 3,
+          "elapsed_seconds": 4.448595417983597,
+          "first_dicom_visible_seconds": 3.837428500992246,
+          "MiB_per_second": 6.219789863946944,
+          "instances": 96,
+          "payload_bytes": 29013394,
+          "fingerprint": "2bfd1b5743929f01aa4a5d85c6af3478eaab92720415efdebfac31116d27630c"
+        }
+      ]
+    },
+    {
+      "observed_at_utc": "2026-11-01T11:39:27.851108+00:00",
+      "python": "3.12.1",
+      "versions": {
+        "tcia-data-retriever": "0.1.0rc1",
+        "idc-index": "0.13.4",
+        "idc-index-data": "25.0.5",
+        "pydicom": "3.0.2"
+      },
+      "tdr_build": {
+        "version": "0.1.0rc1",
+        "sha256": "04fcac066bf837e313229d8437244407f0e2759385efedfcec03efe63b769f30",
+        "git_commit": "618d8bc4e493cabc20b9afc41d54a3ce8a2b0df5"
+      },
+      "cohort_sha256": "a273fa46857aeee1de35fa2a5bf139ce610243a8559fe897b0dfa6312050da06",
+      "mode": "warm prepared-client API calls",
+      "settings": {
+        "tdr_processes": 8,
+        "tdr_max_retries": 0,
+        "idc_workers": "package default",
+        "idc_retries": "package default",
+        "idc_sync": false
+      },
+      "status": "success",
+      "all_payloads_identical": true,
+      "summary": [
+        {
+          "engine": "tdr",
+          "trials": 3,
+          "median_seconds": 2.6026199169864412,
+          "median_MiB_per_second": 10.631336719198458
+        },
+        {
+          "engine": "idc",
+          "trials": 3,
+          "median_seconds": 2.8344767090165988,
+          "median_MiB_per_second": 9.761706138405657
+        }
+      ],
+      "limitations": [
+        "Small CT/MR pilot; no large-file or controlled-access speed claim.",
+        "Fresh local destinations do not clear remote/CDN caches.",
+        "Default concurrency differs; TDR retries disabled; IDC uses package defaults.",
+        "Cold elapsed time includes imports, index/preparation and transfer; warm mode excludes client initialization.",
+        "Warm IDC uses a metadata-only preparation call with transfer intercepted; TDR always starts its packaged executable per call.",
+        "Installation, source validation and post-download verification are not timed.",
+        "First visible DICOM is a filesystem observation, not a network first-byte measurement."
+      ],
+      "trials": [
+        {
+          "engine": "tdr",
+          "repeat": 1,
+          "elapsed_seconds": 2.6026199169864412,
+          "first_dicom_visible_seconds": 2.3210322089726105,
+          "MiB_per_second": 10.631336719198458,
+          "instances": 96,
+          "payload_bytes": 29013394,
+          "fingerprint": "2bfd1b5743929f01aa4a5d85c6af3478eaab92720415efdebfac31116d27630c"
+        },
+        {
+          "engine": "idc",
+          "repeat": 1,
+          "elapsed_seconds": 2.8344767090165988,
+          "first_dicom_visible_seconds": 2.226113834010903,
+          "MiB_per_second": 9.761706138405657,
+          "instances": 96,
+          "payload_bytes": 29013394,
+          "fingerprint": "2bfd1b5743929f01aa4a5d85c6af3478eaab92720415efdebfac31116d27630c"
+        },
+        {
+          "engine": "idc",
+          "repeat": 2,
+          "elapsed_seconds": 2.820808542019222,
+          "first_dicom_visible_seconds": 2.207057084015105,
+          "MiB_per_second": 9.809006275118776,
+          "instances": 96,
+          "payload_bytes": 29013394,
+          "fingerprint": "2bfd1b5743929f01aa4a5d85c6af3478eaab92720415efdebfac31116d27630c"
+        },
+        {
+          "engine": "tdr",
+          "repeat": 2,
+          "elapsed_seconds": 2.6017810000048485,
+          "first_dicom_visible_seconds": 2.2575424170063343,
+          "MiB_per_second": 10.634764682163347,
+          "instances": 96,
+          "payload_bytes": 29013394,
+          "fingerprint": "2bfd1b5743929f01aa4a5d85c6af3478eaab92720415efdebfac31116d27630c"
+        },
+        {
+          "engine": "tdr",
+          "repeat": 3,
+          "elapsed_seconds": 2.7181965420022607,
+          "first_dicom_visible_seconds": 2.382019707991276,
+          "MiB_per_second": 10.179296552703871,
+          "instances": 96,
+          "payload_bytes": 29013394,
+          "fingerprint": "2bfd1b5743929f01aa4a5d85c6af3478eaab92720415efdebfac31116d27630c"
+        },
+        {
+          "engine": "idc",
+          "repeat": 3,
+          "elapsed_seconds": 3.3354712080035824,
+          "first_dicom_visible_seconds": 2.7228945000097156,
+          "MiB_per_second": 8.295478199056749,
+          "instances": 96,
+          "payload_bytes": 29013394,
+          "fingerprint": "2bfd1b5743929f01aa4a5d85c6af3478eaab92720415efdebfac31116d27630c"
+        }
+      ]
+    }
+  ],
+  "sdk_integration_smoke": {
+    "ok": true,
+    "sdk_version": "4.0.0a7",
+    "tdr_version": "0.1.0rc1",
+    "seconds": 2.986295832990436,
+    "instances": 96,
+    "payload_bytes": 29013394,
+    "fingerprint": "2bfd1b5743929f01aa4a5d85c6af3478eaab92720415efdebfac31116d27630c",
+    "python_idc_index_blocked": true,
+    "basis": "Installed local review wheel, before publication; not a deployment claim.",
+    "review_wheel_sha256": "51cf555fe05103caa15338bb28af599e32af446797cc456bc00b3c956290886f"
+  },
+  "sdk_explicit_resume_smoke": {
+    "ok": true,
+    "seconds": 2.494015499978559,
+    "engine_summary": {
+      "schema_version": 1,
+      "status": "success",
+      "version": "0.1.0rc1",
+      "git_commit": "618d8bc4e493cabc20b9afc41d54a3ce8a2b0df5",
+      "total": 2,
+      "downloaded": 0,
+      "synced": 2,
+      "skipped": 0,
+      "failed": 0,
+      "elapsed_seconds": 2.250770542
+    },
+    "basis": "Same installed local review wheel and TDR-owned output directory."
+  }
+}

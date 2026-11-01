@@ -98,6 +98,7 @@ POSTLUDE = r'''
 assert not INSTALL_FROM_PYPI
 assert not DOWNLOAD_CONTROLLED_CMB and not DOWNLOAD_CONTROLLED_CT
 assert report.scope['dry_run'] and report.scope['sample_selected_items'] == 1
+assert not report.scope['data_policy_accepted']
 assert all(entry['status'] == 'planned' for entry in report.entries)
 assert not SOURCE_NIFTI and not MASK_NIFTI
 assert len(cohort) > 0 and len(brain_cohort) > 0 and len(face_selection) > 0
@@ -155,6 +156,10 @@ def prepare_sample_dry_runs(notebook):
             raise RuntimeError('Public samples must explicitly select max_items=1')
         if any(kw.arg == 'dry_run' for kw in call.keywords):
             raise RuntimeError('Reader samples should perform real downloads')
+        policy = next((kw for kw in call.keywords if kw.arg == 'accept_data_policy'), None)
+        if policy is None or not isinstance(policy.value, ast.Constant) or policy.value.value is not True:
+            raise RuntimeError('Reader transfer cells must explicitly accept the data policy')
+        policy.value = ast.Constant(False)
         call.keywords.append(ast.keyword(arg='dry_run', value=ast.Constant(True)))
         cell.source = ast.unparse(ast.fix_missing_locations(tree))
     return len(samples)
