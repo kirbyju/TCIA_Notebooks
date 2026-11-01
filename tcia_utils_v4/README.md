@@ -56,12 +56,6 @@ asserted equivalent to the submitter's originals. Indexed paths inside an archiv
 are not invented standalone download URLs. Check exact scan/segmentation pairing
 and geometry before analysis.
 
-A separate [downloader benchmark](../benchmarks/TCIA_Downloader_Comparison.ipynb)
-compares the two released interfaces on identical public CMB-GEC objects. It has
-fresh-process and prepared-client cases, alternating trials, fresh destinations,
-package/source provenance and DICOM count/hash verification. The small local pilot
-is not a universal speed claim; the Colab notebook allows a second environment.
-
 Use a fresh destination when moving from earlier download backends. The default
 workshop folder is now tcia-workshop-files. resume=True continues TDR-owned
 downloads; it does not import or migrate an earlier IDC/HTTP output tree.
