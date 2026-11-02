@@ -8,18 +8,20 @@ CMB-LCA, public brain MR/NIfTI segmentation metadata, and controlled CT/SEG
 candidate selection. It explains public versus controlled access and DICOM versus
 other formats without requiring knowledge of the hosting infrastructure.
 
-The workshop installs tcia_utils 4.0.0a8 for Python 3.11+. In Colab, run the setup
+The workshop installs tcia_utils 4.0.0a9 for Python 3.11+. In Colab, run the setup
 cell and restart the runtime when prompted. The hosted REST service must include
-the existing shared download plan, public slide descriptors and list-valued
-attributes. This transfer-engine update needs no new server routes or bundle.
+query API 0.6.0+ with the shared participant image-planning route, as well as
+public slide descriptors and list-valued attributes. This update needs new service
+code but no metadata bundle schema change.
 
 All supported image/file transfers now delegate to the pip-installed
 `tcia-data-retriever==0.1.0rc1`. It bundles the headless transfer executable;
 readers do not install Go, Node, a desktop application or another executable.
-The `downloads` extra installs it. IDC's `idc-index` is installed separately for the optional radiology section.
-That section calls IDC directly for its additional public DICOM metadata features;
-`tcia_utils` does not install or wrap IDC. TCIA's own clinical and file workflows
-remain independent of that optional section.
+The `downloads` extra installs it. Participant image planning uses the same TCIA
+service interface for public DICOM series and public non-DICOM files. The service
+reuses IDC's versioned metadata for public DICOM and retains provider attribution.
+No IDC package or separate provider query is required in the notebook. Advanced
+IDC-specific queries and viewers remain available through IDC's own tools.
 The tutorial setup installs both extras. Data Retriever owns transfer retries,
 checksums, output layout, skip-existing behavior and archive extraction.
 
