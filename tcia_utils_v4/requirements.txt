@@ -1,4 +1,7 @@
-tcia_utils[tables,downloads]==4.0.0a5
+tcia_utils[tables,downloads]==4.0.0a8
+# Separate IDC integration used directly by the optional radiology section.
+idc-index==0.13.4
+idc-index-data==25.0.5
 nibabel>=5,<6
 # Maintainer-only notebook validation dependencies.
 nbformat>=5,<6
