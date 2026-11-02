@@ -204,27 +204,61 @@ def test_diagnosis_control_is_next_to_filter_and_export_retains_row_provenance(t
         assert pd.isna(csv.loc[2,'primary_diagnosis_is_inferred'])
 
 
-def test_clinical_download_demos_reuse_the_filtered_cohort_and_keep_samples_small(tmp_path):
+def test_clinical_download_demos_keep_idc_separate_and_preserve_the_cohort(tmp_path, monkeypatch):
+    import sys
     calls=[]
     def plan(participants,**filters):
         calls.append(('plan',participants.copy(),filters))
         return SimpleNamespace(rows=[{'participant_id':'LCA-1'}],unresolved=[],
             coverage_to_dataframe=lambda:pd.DataFrame(),to_dataframe=lambda:pd.DataFrame())
     def download(plan,destination,**kwargs):
-        calls.append(('download',destination,kwargs))
+        calls.append(('download_images',destination,kwargs))
         return SimpleNamespace(to_dataframe=lambda:pd.DataFrame())
-    fake=SimpleNamespace(plan_participant_images=plan,download_images=download)
-    cohort=pd.DataFrame([{'short_title':'CMB-LCA','display_participant_id':'LCA-1'},
-                         {'short_title':'CMB-GEC','display_participant_id':'GEC-1'}])
+    def manifest(path,destination,**kwargs):
+        calls.append(('download_manifest',pd.read_csv(path),kwargs))
+        return SimpleNamespace(to_dataframe=lambda:pd.DataFrame())
+    fake=SimpleNamespace(plan_participant_images=plan,download_images=download,download_manifest=manifest)
+    cohort=pd.DataFrame([
+        {'dataset_type':'Collection','short_title':'CMB-LCA','display_participant_id':'LCA-1'},
+        {'dataset_type':'Collection','short_title':'CMB-GEC','display_participant_id':'LCA-1'},
+        {'dataset_type':'Analysis Result','short_title':'CMB-LCA','display_participant_id':'AR-1'}])
+    base={'collection_id':'cmb_lca','source_DOI':'10.7937/3cx3-s132','PatientID':'LCA-1',
+          'StudyInstanceUID':'1.2','Modality':'CT'}
+    index=pd.DataFrame([
+        dict(base,SeriesInstanceUID='1.2.3'),
+        dict(base,SeriesInstanceUID='1.2.4',Modality='MR'),
+        dict(base,SeriesInstanceUID='2.2.3',collection_id='cmb_gec'),
+        dict(base,SeriesInstanceUID='3.2.3',source_DOI='10.zenodo/derived'),
+        dict(base,SeriesInstanceUID='4.2.3',PatientID='LCA-2'),
+        dict(base,SeriesInstanceUID='5.2.3',PatientID='AR-1')])
+    monkeypatch.setitem(sys.modules,'idc_index',SimpleNamespace(IDCClient=lambda:SimpleNamespace(
+        index=index,get_idc_version=lambda:'v25')))
     ns={'format_table':format_table,'pd':pd,'cohort':cohort,'tcia':fake,'display':lambda *a:None,'OUTPUT':tmp_path}
     for marker in ['clinical_image_participants =','slide_images =']:
         tree=ast.parse(source_containing(marker))
         with redirect_stdout(io.StringIO()):exec(compile(ast.fix_missing_locations(tree),str(NOTEBOOK),'exec'),ns)
-    assert calls[0][1].display_participant_id.tolist()==['LCA-1']
-    assert calls[2][1].display_participant_id.tolist()==['LCA-1']
-    assert calls[0][2]=={'modality':'CT','file_format':'DICOM'}
-    assert calls[2][2]=={'modality':'Whole Slide Image','file_format':'non-DICOM'}
-    assert calls[1][2]['max_items']==calls[3][2]['max_items']==1
+    assert calls[0][0]=='download_manifest'
+    assert calls[0][1].SeriesInstanceUID.tolist()==['1.2.3']
+    assert calls[0][2]['max_items']==1
+    assert calls[1][0]=='plan' and calls[1][1].display_participant_id.tolist()==['LCA-1']
+    assert calls[1][2]=={'modality':'Whole Slide Image','file_format':'non-DICOM'}
+    assert calls[2][0]=='download_images' and calls[2][2]['max_items']==1
+    assert ns['IDC_VERSION']=='v25'
+
+
+def test_pathology_example_does_not_require_running_the_idc_section(tmp_path, monkeypatch):
+    import sys
+    monkeypatch.setitem(sys.modules,'idc_index',None)
+    selected=[]
+    def plan(rows,**kwargs):
+        selected.extend(rows.display_participant_id.tolist())
+        return SimpleNamespace(rows=[],unresolved=[],coverage_to_dataframe=lambda:pd.DataFrame(),
+                               to_dataframe=lambda:pd.DataFrame())
+    ns={'pd':pd,'cohort':pd.DataFrame([{'dataset_type':'Collection','short_title':'CMB-LCA',
+        'display_participant_id':'LCA-1'}]),'tcia':SimpleNamespace(plan_participant_images=plan),
+        'display':lambda *a:None,'OUTPUT':tmp_path}
+    with redirect_stdout(io.StringIO()):exec(source_containing('slide_images ='),ns)
+    assert selected==['LCA-1']
 
 
 @pytest.mark.parametrize('damage',['unbounded_sample','untagged_sample'])

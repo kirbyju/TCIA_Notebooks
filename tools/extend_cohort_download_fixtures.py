@@ -38,7 +38,7 @@ with httpx.Client(timeout=90,follow_redirects=True) as client:
     uids={line.strip() for line in content.decode('utf-8-sig').split(marker,1)[1].splitlines() if line.strip()}
     after=client.get('https://tcia.duckdns.org/v2/ready').json()
     assert after['release_fingerprint']==capture['fingerprint']
-columns=['PatientID','SeriesInstanceUID','StudyInstanceUID','Modality','instanceCount','series_size_MB']
+columns=['collection_id','source_DOI','PatientID','SeriesInstanceUID','StudyInstanceUID','Modality','instanceCount','series_size_MB']
 index=pd.read_parquet(idc_index_data.IDC_INDEX_PARQUET_FILEPATH,columns=columns)
 subset=index[index['SeriesInstanceUID'].isin(uids)]
 missing=sorted(uids-set(subset['SeriesInstanceUID']))

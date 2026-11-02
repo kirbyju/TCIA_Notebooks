@@ -38,7 +38,10 @@ _original_check_call = _subprocess.check_call
 _original_popen = _subprocess.Popen
 if _mode == 'fixture':
     import pandas as _pd, idc_index as _idc
-    _idc_fixture = _json.loads(_gzip.decompress(_cassette_path.with_name('cohort-public-dicom.json.gz').read_bytes()))
+    import hashlib as _hashlib
+    _idc_path = _cassette_path.with_name('cohort-public-dicom.json.gz')
+    assert _hashlib.sha256(_idc_path.read_bytes()).hexdigest() == _capture['cohort_download_extension']['idc_fixture_sha256']
+    _idc_fixture = _json.loads(_gzip.decompress(_idc_path.read_bytes()))
     def _forbid_idc_transfer(**kwargs):
         raise AssertionError('Metadata validation forbids image transfers.')
     _idc.IDCClient = lambda: _SimpleNamespace(
@@ -111,9 +114,11 @@ assert set(pd.read_csv(face_manifest).columns) == {'drs_uri'}
 assert len(pd.read_csv(face_manifest)) == face_selection['drs_uri'].nunique()
 assert participant_assets.shape[0] > 0 and len(example_facts) > 0
 assert len(brain_files) > 0
-assert len(ct_images.rows) > 0 and len(slide_images.rows) > 0
-assert not ct_images.unresolved and not slide_images.unresolved
-assert {r['participant_id'] for r in ct_images.rows}.issubset(set(clinical_image_participants.display_participant_id))
+assert len(ct_series) > 0 and len(slide_images.rows) > 0
+assert not slide_images.unresolved
+assert set(ct_series.PatientID).issubset(set(clinical_image_participants.display_participant_id))
+assert set(ct_series.collection_id) == {'cmb_lca'}
+assert set(ct_series.source_DOI) == {'10.7937/3cx3-s132'}
 assert {r['participant_id'] for r in slide_images.rows}.issubset(set(clinical_image_participants.display_participant_id))
 if _mode == 'record':
     _capture['observed_at_utc'] = datetime.now(timezone.utc).isoformat()
@@ -129,8 +134,8 @@ _report = {'fingerprint': SNAPSHOT, 'dataset_groups': len(download_plan),
     'brain_segmentation_files': len(brain_cohort), 'brain_example_files': len(brain_files),
     'controlled_ct_seg_studies': len(face_cohort), 'controlled_selected_files': len(face_selection),
     'unique_http_requests': len(_seen_requests), 'payload_transfers': 0,
-    'clinical_ct_series':len(ct_images.rows),'clinical_slide_files':len(slide_images.rows),
-    'clinical_ct_index_version':ct_images.scope['imaging_index_version'],
+    'clinical_ct_series':len(ct_series),'clinical_slide_files':len(slide_images.rows),
+    'clinical_ct_index_version':IDC_VERSION,
     'cohort_download_extension':_capture.get('cohort_download_extension'),
     'package_version': version('tcia_utils'), 'python': sys.version.split()[0]}
 _Path(REPORT_VALUE).write_text(_json.dumps(_report, indent=2))
