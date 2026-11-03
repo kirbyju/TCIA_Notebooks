@@ -8,9 +8,9 @@ across CMB-LCA and NSCLC-Radiomics (with CMB-GEC as a site-filter comparison), p
 candidate selection. It explains public versus controlled access and DICOM versus
 other formats without requiring knowledge of the hosting infrastructure.
 
-The workshop installs tcia_utils 4.0.0a14 for Python 3.11+. In Colab, run the setup
+The workshop installs tcia_utils 4.0.0a15 for Python 3.11+. In Colab, run the setup
 cell and restart the runtime when prompted. The hosted REST service must include
-query API 0.7.0+ with combined participant clinical filters, the shared participant
+query API 0.7.1+ with combined participant clinical filters, the shared participant
 image-planning route, public slide descriptors and list-valued attributes.
 This requires a source update and REST/MCP restart; no bundle rebuild is needed.
 
@@ -67,9 +67,9 @@ The site is the clinical primary_site field, not the scanned body part. Full
 clinical exploration enriches only the matches. Query settings, separate inference
 flags and metadata snapshot remain with outputs.
 
-The fixture contains actual public metadata responses from the deployed 0.7.0
+The fixture contains actual public metadata responses from the deployed 0.7.1
 API, recorded on 2026-11-03. The complete notebook passed against that deployment
-using the built 4.0.0a14 wheel with all imaging transfers blocked. The default
+using the built 4.0.0a15 wheel with all imaging transfers blocked. The default
 combined search returned 322 records across CMB-LCA and NSCLC-Radiomics;
 recorded-only diagnosis/site evidence returned 5 CMB-LCA records.
 
@@ -83,3 +83,10 @@ and geometry before analysis.
 Use a fresh destination when moving from earlier download backends. The default
 workshop folder is now tcia-workshop-files. resume=True continues TDR-owned
 downloads; it does not import or migrate an earlier IDC/HTTP output tree.
+
+Controlled CT/SEG downloads distinguish the reported DICOM-series size from exact
+ZIP payload bytes. Server 0.7.1 supplies the size basis and published archive-size
+label; only exact manifest byte counts are used as payload-size assertions. SDK
+a15 also avoids asserting ambiguous controlled-inventory sizes when exact payload
+metadata is absent. Available checksum and response-length checks remain enabled.
+The metadata CSV is written during preparation and does not prove transfer success.

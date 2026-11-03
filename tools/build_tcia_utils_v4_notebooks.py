@@ -36,7 +36,7 @@ Run the next cell to install the packages used in this lab. In Colab, run the no
 
 code(r'''import subprocess, sys
 subprocess.check_call(
-    [sys.executable, "-m", "pip", "install", "tcia_utils[tables,downloads]==4.0.0a14", "nibabel>=5,<6"]
+    [sys.executable, "-m", "pip", "install", "tcia_utils[tables,downloads]==4.0.0a15", "nibabel>=5,<6"]
 )''', tags=['installation'])
 
 code(r'''from pathlib import Path
@@ -57,7 +57,7 @@ from tcia_utils import TCIAClient, DownloadError
 assert hasattr(tcia_utils, "format_table") and all(
     hasattr(TCIAClient, method)
     for method in ("download_manifest", "plan_participant_images", "download_images")
-) and "primary_site" in inspect.signature(TCIAClient.search_participants).parameters and "accept_data_policy" in inspect.signature(TCIAClient.download_manifest).parameters, "Run the installation cell for tcia_utils 4.0.0a14, restart your Python/Colab runtime, then run from the top."
+) and "primary_site" in inspect.signature(TCIAClient.search_participants).parameters and "accept_data_policy" in inspect.signature(TCIAClient.download_manifest).parameters, "Run the installation cell for tcia_utils 4.0.0a15, restart your Python/Colab runtime, then run from the top."
 format_table = tcia_utils.format_table
 pd.set_option("display.max_colwidth", 85)
 OUTPUT = Path(os.environ.get("TCIA_EXAMPLE_OUTPUT_DIR", "tcia-workshop-files"))
@@ -784,7 +784,9 @@ face_cohort.to_json(OUTPUT / "controlled_ct_seg_cohort.json", orient="records", 
 
 md(r'''CT and SEG appearing in the same study is stronger evidence than a collection-level “has segmentations” label. It still does not verify the exact referenced CT series or the segment names inside a SEG object. After an authorized download, check those DICOM references and labels before using the pair for training.
 
-Let's prepare a **one-participant example** with one candidate CT file and one candidate SEG file from the same study. We choose one of each modality before applying the two-file limit, so two CT files cannot crowd out the segmentation. The exact image/label references still need checking after download. We'll write the CT and SEG file identifiers already provided by the official metadata. The manifest will contain just one `drs_uri` column, which `download_manifest()` accepts. We'll save the fuller metadata separately so we can trace every selected file.''')
+Let's prepare a **one-participant example** with one candidate CT file and one candidate SEG file from the same study. We choose one of each modality before applying the two-file limit, so two CT files cannot crowd out the segmentation. The exact image/label references still need checking after download. We'll write the CT and SEG file identifiers already provided by the official metadata. The manifest will contain just one `drs_uri` column, which `download_manifest()` accepts. We'll save the fuller metadata separately so we can trace every selected file.
+
+Size needs a little care here. A reported DICOM-series size can describe the **uncompressed images**, while the file we download is a **ZIP archive**. The two sizes can differ a lot. `download_size_label` shows the archive-size label from the published manifest; it can be rounded. `download_size_bytes` is filled only when an exact byte count is available. A blank is unknown, not zero. The package uses exact download sizes and available checksums for transfer checks; it does not treat a series size or rounded estimate as an exact ZIP size.''')
 
 code(r'''face_selection = pd.DataFrame()
 face_manifest = None
@@ -807,17 +809,19 @@ if len(face_cohort):
         OUTPUT / "controlled_ct_and_seg_evidence.json", orient="records", indent=2
     )
     display(
-        face_selection[
-            ["participant_id", "modality", "series_instance_uid", "file_size_bytes", "file_name"]
-        ]
+        format_table(
+            face_selection,
+            columns=["participant_id", "modality", "series_instance_uid", "file_name",
+                     "file_size_bytes", "file_size_basis", "download_size_label", "download_size_bytes"],
+        )
     )
     print("Manifest:", face_manifest.name)
     print("Selected files:", face_selection["drs_uri"].nunique())
-    print(
-        "Known download size (MB):",
-        round(face_selection["file_size_bytes"].fillna(0).sum() / 1_000_000, 2),
+    exact_sizes = pd.to_numeric(
+        face_selection.reindex(columns=["download_size_bytes"])["download_size_bytes"],
+        errors="coerce",
     )
-    print("Files without a size estimate:", face_selection["file_size_bytes"].isna().sum())
+    print("Files with exact download byte counts:", exact_sizes.notna().sum(), "of", len(face_selection))
 else:
     print("No participant-study pair satisfied CT + SEG in this snapshot.")''')
 
@@ -900,7 +904,7 @@ Useful links: [TCIA Dataset Explorer](https://www.cancerimagingarchive.net/datas
 notebook = nbf.v4.new_notebook(cells=cells, metadata={
     "kernelspec": {"display_name":"Python 3", "language":"python", "name":"python3"},
     "language_info": {"name":"python", "version":"3.11"},
-    "tcia_workshop": {"package_version":"4.0.0a14", "default_mode":"live_public_samples",
+    "tcia_workshop": {"package_version":"4.0.0a15", "default_mode":"live_public_samples",
         "payload_downloads_default":True, "public_sample_max_items":1,
         "controlled_downloads_default":False, "audience":"junior data scientists"}})
 for i, cell in enumerate(notebook.cells): cell.id = f"tcia-workshop-{i:02d}"
