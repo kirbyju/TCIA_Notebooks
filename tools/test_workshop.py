@@ -60,8 +60,8 @@ def test_empty_modality_search_is_a_clear_zero_match(tmp_path):
     with redirect_stdout(output):
         exec(source_containing('COHORT_COLLECTIONS ='),ns)
         exec(source_containing('clinical_result ='),ns)
-        exec(source_containing('matches ='),ns)
-    assert ns['cohort'].empty and 'Try another collection or modality' in output.getvalue()
+        exec(source_containing('cohort = with_clinical.copy()'),ns)
+    assert ns['cohort'].empty and 'Try another collection, modality, diagnosis, or disease site' in output.getvalue()
 
 
 @pytest.mark.parametrize('mismatch',[False,True])
@@ -178,52 +178,31 @@ def test_notebook_does_not_install_or_invoke_external_download_applications():
     assert 'python_supported' in text
 
 
-@pytest.mark.parametrize('include_inferred,expected', [
-    (True, ['reported', 'inferred_diagnosis', 'inferred_site', 'unknown_evidence']),
-    (False, ['reported']),
-])
-def test_clinical_filters_require_diagnosis_and_site_and_retain_evidence(tmp_path, include_inferred, expected):
-    rows=[]
-    for name,diagnosis,site,diagnosis_inferred,site_inferred in [
-        ('reported','CARCINOMA','Upper lobe of right lung',False,False),
-        ('inferred_diagnosis','Carcinoma','Lung',True,False),
-        ('inferred_site','Carcinoma','Lung',False,True),
-        ('unknown_evidence','Carcinoma','Lung',None,None),
-        ('wrong_diagnosis','Sarcoma','Lung',False,False),
-        ('wrong_site','Carcinoma','Esophagus',False,False),
-        ('missing_diagnosis',None,'Lung',False,False),
-        ('missing_site','Carcinoma',None,False,False),
-    ]:
-        rows.append({'short_title':'EXAMPLE','display_participant_id':name,
-                     'primary_diagnosis':diagnosis,'primary_site':site,
-                     'primary_diagnosis_is_inferred':diagnosis_inferred,
-                     'primary_site_is_inferred':site_inferred,
-                     'resolved_values':{},'resolved_sources':{},'conflicts':[]})
-    tree=ast.parse(source_containing('matches ='))
-    setting=next(node for node in tree.body if isinstance(node,ast.Assign)
-                 and any(isinstance(t,ast.Name) and t.id=='INCLUDE_INFERRED_CLINICAL' for t in node.targets))
-    setting.value=ast.Constant(include_inferred)
-    ns={'format_table':format_table,'pd':pd,'with_clinical':pd.DataFrame(rows),
-        'OUTPUT':tmp_path,'display':lambda *a:None}
-    with redirect_stdout(io.StringIO()):exec(compile(ast.fix_missing_locations(tree),str(NOTEBOOK),'exec'),ns)
-    assert ns['cohort'].display_participant_id.tolist()==expected
-    csv=pd.read_csv(tmp_path/'modality_diagnosis_site_cohort.csv')
+def test_combined_search_sends_all_criteria_in_initial_request(tmp_path):
+    calls=[]
+    rows=[{'short_title':'EXAMPLE','display_participant_id':'match','participant_key':'key'}]
+    def search(**kwargs):
+        calls.append(kwargs)
+        return SimpleNamespace(to_dataframe=lambda **k:pd.DataFrame(rows))
+    ns={'pd':pd,'tcia':SimpleNamespace(search_participants=search),'display':lambda *a:None}
+    with redirect_stdout(io.StringIO()):exec(source_containing('COHORT_COLLECTIONS ='),ns)
+    assert calls==[{'short_titles':['CMB-GEC','CMB-LCA','NSCLC-Radiomics'],
+        'dataset_type':'collection','modalities':['CT'],'diagnosis':'Carcinoma',
+        'primary_site':'Lung','include_inferred':True,'limit':500}]
+    assert ns['participants'].display_participant_id.tolist()==['match']
+
+
+def test_clinical_exploration_keeps_server_cohort_and_exports_evidence(tmp_path):
+    rows=[{'short_title':'EXAMPLE','display_participant_id':'match',
+        'primary_diagnosis':'Carcinoma','primary_site':'Lung',
+        'primary_diagnosis_is_inferred':False,'primary_site_is_inferred':True,
+        'resolved_values':{},'resolved_sources':{},'conflicts':[]}]
+    ns={'pd':pd,'with_clinical':pd.DataFrame(rows),'OUTPUT':tmp_path,'display':lambda *a:None}
+    with redirect_stdout(io.StringIO()):exec(source_containing('cohort = with_clinical.copy()'),ns)
+    assert ns['cohort'].display_participant_id.tolist()==['match']
     exported=pd.read_json(tmp_path/'modality_diagnosis_site_cohort.json')
-    assert csv.display_participant_id.tolist()==exported.display_participant_id.tolist()==expected
-    assert {'primary_diagnosis_is_inferred','primary_site_is_inferred'}.issubset(csv.columns)
-    assert csv.loc[0,'primary_diagnosis_is_inferred']==False
-    assert csv.loc[0,'primary_site_is_inferred']==False
-
-
-@pytest.mark.parametrize('setting', ['DIAGNOSIS_TEXT', 'PRIMARY_SITE_TEXT'])
-def test_empty_clinical_text_does_not_accidentally_match_everyone(tmp_path, setting):
-    tree=ast.parse(source_containing('matches ='))
-    node=next(node for node in tree.body if isinstance(node,ast.Assign)
-              and any(isinstance(t,ast.Name) and t.id==setting for t in node.targets))
-    node.value=ast.Constant('  ')
-    with pytest.raises(ValueError,match='nonempty'):
-        exec(compile(ast.fix_missing_locations(tree),str(NOTEBOOK),'exec'),
-             {'OUTPUT':tmp_path,'pd':pd,'format_table':format_table,'display':lambda *a:None})
+    assert exported.primary_site_is_inferred.tolist()==[True]
+    assert 'diagnosis_matches' not in source_containing('cohort = with_clinical.copy()')
 
 
 def test_clinical_downloads_use_the_same_tcia_interface_and_keep_the_cohort(tmp_path, monkeypatch):

@@ -116,7 +116,7 @@ if _mode == 'record':
     _cassette_path.write_bytes(_gzip.compress(_json.dumps(_capture, separators=(',', ':')).encode(), mtime=0))
 _report = {'fingerprint': SNAPSHOT, 'dataset_groups': len(download_plan),
     'python_download_groups': len(python_groups), 'external_download_groups': len(external_groups), 'manifest_download_groups': len(manifest_groups),
-    'candidate_participant_records': len(candidates), 'matched_participant_records': len(cohort),
+    'search_match_records': len(participants), 'matched_participant_records': len(cohort),
     'matched_collections': sorted(cohort['short_title'].unique().tolist()),
     'clinical_filters': {'diagnosis_text':DIAGNOSIS_TEXT,'primary_site_text':PRIMARY_SITE_TEXT,
                          'include_inferred':INCLUDE_INFERRED_CLINICAL},
