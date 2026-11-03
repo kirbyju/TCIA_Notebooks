@@ -16,7 +16,7 @@ In this hands-on lab we'll start with a dataset, then work our way down to indiv
 We'll work through four questions:
 
 1. **Which datasets have the data I need, and how do I download a whole dataset?**
-2. **Can I find participants with a particular image modality and diagnosis across datasets?**
+2. **Can I find participants with an image modality, diagnosis, and primary disease site across datasets?**
 3. **Where can I find public brain MR images with segmentation masks?**
 4. **How do I prepare a controlled-access CT cohort with segmentations?**
 
