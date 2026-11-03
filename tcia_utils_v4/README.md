@@ -61,10 +61,11 @@ The site is the clinical primary_site field, not the scanned body part. Full
 clinical exploration enriches only the matches. Query settings, separate inference
 flags and metadata snapshot remain with outputs.
 
-The combined-search fixture currently records a local contract projection from
-the new source service over previously captured public participant/clinical rows.
-Its provenance is marked in the fixture and QA report; it is not a deployed API
-capture. Replace it with a live metadata recording after source deployment.
+The fixture contains actual public metadata responses from the deployed 0.7.0
+API, recorded on 2026-11-03. The complete notebook passed against that deployment
+using the built 4.0.0a14 wheel with all imaging transfers blocked. The default
+combined search returned 322 records across CMB-LCA and NSCLC-Radiomics;
+recorded-only diagnosis/site evidence returned 5 CMB-LCA records.
 
 The clinically filtered cohort examples plan public CMB-LCA CT or slide files for
 exactly the selected participants. Coverage includes zero matches; unresolved
