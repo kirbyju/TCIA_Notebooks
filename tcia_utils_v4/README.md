@@ -67,7 +67,7 @@ The site is the clinical primary_site field, not the scanned body part. Full
 clinical exploration enriches only the matches. Query settings, separate inference
 flags and metadata snapshot remain with outputs.
 
-The fixture contains actual public metadata responses from the deployed 0.7.0
+The fixture contains actual public metadata responses from the deployed 0.7.1
 API, recorded on 2026-11-03. The complete notebook passed against that deployment
 using the built 4.0.0a15 wheel with all imaging transfers blocked. The default
 combined search returned 322 records across CMB-LCA and NSCLC-Radiomics;
