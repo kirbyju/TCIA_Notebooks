@@ -8,11 +8,11 @@ across CMB-LCA and NSCLC-Radiomics (with CMB-GEC as a site-filter comparison), p
 candidate selection. It explains public versus controlled access and DICOM versus
 other formats without requiring knowledge of the hosting infrastructure.
 
-The workshop installs tcia_utils 4.0.0a13 for Python 3.11+. In Colab, run the setup
+The workshop installs tcia_utils 4.0.0a14 for Python 3.11+. In Colab, run the setup
 cell and restart the runtime when prompted. The hosted REST service must include
-query API 0.6.0+ with the shared participant image-planning route, as well as
-public slide descriptors and list-valued attributes. This notebook update needs
-no new server code or metadata bundle schema change.
+query API 0.7.0+ with combined participant clinical filters, the shared participant
+image-planning route, public slide descriptors and list-valued attributes.
+This requires a source update and REST/MCP restart; no bundle rebuild is needed.
 
 All supported image/file transfers now delegate to the pip-installed
 `tcia-data-retriever==0.1.0rc2`. It bundles the headless transfer executable;
@@ -53,13 +53,18 @@ calls; controlled examples remain off. Independent HTTP/subprocess guards block
 image transfers. Recorded metadata describe their captured snapshot and are not
 proof that a later deployment or source update is equivalent.
 
-Participant search first collects modality candidates. The clinical-filter cell
-requires both diagnosis and primary-site text, with literal case-insensitive
-substring matching. Recorded-only mode requires both inference flags to be False;
-missing values cannot satisfy either required text filter. The site is the clinical
-primary_site field, not the scanned body part. Query settings, both inference flags
-and the metadata snapshot are retained with outputs. This workflow does not add
-clinical parameters to the current participant-search endpoint.
+Participant search applies modality, diagnosis and primary-site criteria together
+before pagination. Text matching is literal and case-insensitive. Recorded-only
+mode requires both selected clinical fields to have false inference flags and
+patient-level source evidence. Missing values cannot satisfy either text filter.
+The site is the clinical primary_site field, not the scanned body part. Full
+clinical exploration enriches only the matches. Query settings, separate inference
+flags and metadata snapshot remain with outputs.
+
+The combined-search fixture currently records a local contract projection from
+the new source service over previously captured public participant/clinical rows.
+Its provenance is marked in the fixture and QA report; it is not a deployed API
+capture. Replace it with a live metadata recording after source deployment.
 
 The clinically filtered cohort examples plan public CMB-LCA CT or slide files for
 exactly the selected participants. Coverage includes zero matches; unresolved

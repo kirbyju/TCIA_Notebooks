@@ -36,7 +36,7 @@ Run the next cell to install the packages used in this lab. In Colab, run the no
 
 code(r'''import subprocess, sys
 subprocess.check_call(
-    [sys.executable, "-m", "pip", "install", "tcia_utils[tables,downloads]==4.0.0a13", "nibabel>=5,<6"]
+    [sys.executable, "-m", "pip", "install", "tcia_utils[tables,downloads]==4.0.0a14", "nibabel>=5,<6"]
 )''', tags=['installation'])
 
 code(r'''from pathlib import Path
@@ -57,7 +57,7 @@ from tcia_utils import TCIAClient, DownloadError
 assert hasattr(tcia_utils, "format_table") and all(
     hasattr(TCIAClient, method)
     for method in ("download_manifest", "plan_participant_images", "download_images")
-) and "accept_data_policy" in inspect.signature(TCIAClient.download_manifest).parameters, "Run the installation cell for tcia_utils 4.0.0a13, restart your Python/Colab runtime, then run from the top."
+) and "primary_site" in inspect.signature(TCIAClient.search_participants).parameters and "accept_data_policy" in inspect.signature(TCIAClient.download_manifest).parameters, "Run the installation cell for tcia_utils 4.0.0a14, restart your Python/Colab runtime, then run from the top."
 format_table = tcia_utils.format_table
 pd.set_option("display.max_colwidth", 85)
 OUTPUT = Path(os.environ.get("TCIA_EXAMPLE_OUTPUT_DIR", "tcia-workshop-files"))
@@ -293,28 +293,35 @@ md(r'''## 2. Which participants match my modality, diagnosis, and disease site?
 
 Suppose we want **CT** images from participants whose available **diagnosis includes “Carcinoma”** and whose **primary disease site includes “Lung.”** These three conditions must all match. We'll search CMB-LCA and NSCLC-Radiomics to find matches across datasets. We also include CMB-GEC so we can see how the disease-site filter narrows the selection.
 
-Choose the collection list and modality in the next cell. After inspecting the available clinical labels, choose the diagnosis and primary-site text in the clinical-filter cell below. For example, try `PRIMARY_SITE_TEXT = "Esophagus"` to look for gastroesophageal participants instead. This refers to the clinical `primary_site` field, not the body part covered by the CT scan. A scan may cover several regions or show metastases.
+Choose the collection list, modality, diagnosis, and primary disease site together in the next cell. The search requires **all three conditions** before returning any participants. No images are downloaded by this query. For example, try `PRIMARY_SITE_TEXT = "Esophagus"` to look for gastroesophageal participants instead. Disease site refers to the clinical `primary_site` field, not the body part covered by the CT scan. A scan may cover several regions or show metastases.
 
-**There are two search steps here.** The first API call finds participants with the selected imaging modality. It returns **candidates**, not the final clinical cohort, because the current participant-search endpoint does not accept diagnosis or primary-site filters. We then collect their available clinical records and apply **both** clinical filters below. No images are downloaded by these queries.
+Leave `INCLUDE_INFERRED_CLINICAL = True` to allow supported clinical labels inferred from the dataset. Set it to `False` to require both matching clinical values to be recorded for the participant, with patient-level source evidence. Unknown inference status is excluded in that mode. The results retain separate diagnosis and site inference flags so we can inspect their evidence.
 
 The text filters use case-insensitive substring matching. They do not expand medical synonyms: “Lung” can match “upper lobe of right lung,” but a different term such as “pulmonary” is not automatically equivalent. Start with these selected collections and inspect the reported labels before searching more broadly.''')
 
 code(r'''COHORT_COLLECTIONS = ["CMB-GEC", "CMB-LCA", "NSCLC-Radiomics"]
 COHORT_MODALITY = "CT"
-candidates = tcia.search_participants(
+DIAGNOSIS_TEXT = "Carcinoma"
+PRIMARY_SITE_TEXT = "Lung"
+INCLUDE_INFERRED_CLINICAL = True
+
+participants = tcia.search_participants(
     short_titles=COHORT_COLLECTIONS,
     dataset_type="collection",
     modalities=[COHORT_MODALITY],
+    diagnosis=DIAGNOSIS_TEXT,
+    primary_site=PRIMARY_SITE_TEXT,
+    include_inferred=INCLUDE_INFERRED_CLINICAL,
     limit=500,
 ).to_dataframe(all_pages=True)
-if candidates.empty:
-    candidates = pd.DataFrame(
+if participants.empty:
+    participants = pd.DataFrame(
         columns=["short_title", "display_participant_id", "participant_key", "modalities"]
     )
-    print("No participants matched. Try another collection or modality.")
-print("Modality candidates before diagnosis/site filters:", len(candidates))
+    print("No participants matched. Try another collection, modality, diagnosis, or disease site.")
+print("Participants matching modality, diagnosis AND primary site:", len(participants))
 display(
-    candidates.reindex(
+    participants.reindex(
         columns=[
             "short_title",
             "display_participant_id",
@@ -330,7 +337,7 @@ md(r'''Clinical information can come from a collection's own files or public cli
 
 `tcia.clinical_for_participants()` handles the batching and checks the returned identities. We'll join exact participant IDs **within each collection**. We won't guess an ID conversion or assume that the same ID in two collections means the same person. Unmatched IDs stay visible.''')
 
-code(r'''clinical_result = tcia.clinical_for_participants(candidates)
+code(r'''clinical_result = tcia.clinical_for_participants(participants)
 clinical = clinical_result.to_dataframe(
     "subjects",
     columns=[
@@ -345,7 +352,7 @@ clinical = clinical_result.to_dataframe(
         "conflicts",
     ],
 )
-with_clinical = candidates.merge(
+with_clinical = participants.merge(
     clinical,
     how="left",
     left_on=["short_title", "display_participant_id"],
@@ -360,43 +367,13 @@ display(with_clinical["primary_diagnosis"].value_counts(dropna=False).to_frame("
 print("Available primary disease-site labels:")
 display(with_clinical["primary_site"].value_counts(dropna=False).to_frame("participants"))''')
 
-md(r'''Now let's turn the modality candidates into our **final cohort**. The next cell requires a matching diagnosis **and** primary disease site. It keeps only those rows for the clinical summary and image-selection examples that follow.
+md(r'''Our initial search already applied the modality, diagnosis, and disease-site criteria. We've now added the full clinical records for those matches; we do not need to filter the table again.
 
-Choose whether to allow clinical labels inferred from the dataset:
-
-- Leave `INCLUDE_INFERRED_CLINICAL = True` to allow matching diagnosis and site labels, including inferred ones.
-- Set it to `False` to require **both** matching values to be explicitly marked as reported for that participant. Unknown inference status is excluded in that mode.
-
-The displayed and exported rows retain separate `primary_diagnosis_is_inferred` and `primary_site_is_inferred` columns. `True` means inferred, `False` means reported at the participant level, and a blank means unknown. These columns describe each value's evidence; the setting above controls which evidence we accept.
-
-You can change the diagnosis text, primary-site text, or inference setting and rerun the next cell using the clinical data already collected. Change the modality or collection list by rerunning this section from its first code cell.
+The displayed and exported rows retain separate `primary_diagnosis_is_inferred` and `primary_site_is_inferred` columns. `True` means inferred, `False` means not inferred, and a blank means unknown. Source evidence tells us whether a value is reported for the participant. To change the criteria or inference setting, rerun this section from its first code cell.
 
 We are counting **dataset-scoped participant records**, not unique people deduplicated across collections. Missing clinical values do not establish the absence of disease. This cohort covers only the selected collections and the information currently indexed.''')
 
-code(r'''DIAGNOSIS_TEXT = "Carcinoma"
-PRIMARY_SITE_TEXT = "Lung"
-INCLUDE_INFERRED_CLINICAL = True  # False requires reported diagnosis AND site.
-
-if not DIAGNOSIS_TEXT.strip() or not PRIMARY_SITE_TEXT.strip():
-    raise ValueError("Choose nonempty DIAGNOSIS_TEXT and PRIMARY_SITE_TEXT values.")
-
-diagnosis_matches = (
-    with_clinical["primary_diagnosis"]
-    .astype("string")
-    .str.contains(DIAGNOSIS_TEXT, case=False, regex=False, na=False)
-)
-site_matches = (
-    with_clinical["primary_site"]
-    .astype("string")
-    .str.contains(PRIMARY_SITE_TEXT, case=False, regex=False, na=False)
-)
-matches = diagnosis_matches & site_matches
-if not INCLUDE_INFERRED_CLINICAL:
-    matches &= (
-        with_clinical["primary_diagnosis_is_inferred"].eq(False)
-        & with_clinical["primary_site_is_inferred"].eq(False)
-    )
-cohort = with_clinical.loc[matches].copy()
+code(r'''cohort = with_clinical.copy()
 print("Final cohort matching modality, diagnosis AND primary site:", len(cohort))
 display(
     cohort.reindex(
@@ -885,7 +862,7 @@ code(r'''run_record = {
     "image_planning_providers": ct_images.providers,
     "saved_manifests": saved_manifests,
     "external_download_ids": external_groups["download_id"].tolist(),
-    "candidate_records": len(candidates),
+    "search_match_records": len(participants),
     "matching_records": len(cohort),
     "brain_collections": BRAIN_COLLECTIONS,
     "brain_segmentation_files": len(brain_cohort),
@@ -919,7 +896,7 @@ Useful links: [TCIA Dataset Explorer](https://www.cancerimagingarchive.net/datas
 notebook = nbf.v4.new_notebook(cells=cells, metadata={
     "kernelspec": {"display_name":"Python 3", "language":"python", "name":"python3"},
     "language_info": {"name":"python", "version":"3.11"},
-    "tcia_workshop": {"package_version":"4.0.0a13", "default_mode":"live_public_samples",
+    "tcia_workshop": {"package_version":"4.0.0a14", "default_mode":"live_public_samples",
         "payload_downloads_default":True, "public_sample_max_items":1,
         "controlled_downloads_default":False, "audience":"junior data scientists"}})
 for i, cell in enumerate(notebook.cells): cell.id = f"tcia-workshop-{i:02d}"
