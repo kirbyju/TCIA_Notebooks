@@ -36,7 +36,7 @@ Run the next cell to install the packages used in this lab. In Colab, run the no
 
 code(r'''import subprocess, sys
 subprocess.check_call(
-    [sys.executable, "-m", "pip", "install", "tcia_utils[tables,downloads]==4.0.0a11", "nibabel>=5,<6"]
+    [sys.executable, "-m", "pip", "install", "tcia_utils[tables,downloads]==4.0.0a12", "nibabel>=5,<6"]
 )''', tags=['installation'])
 
 code(r'''from pathlib import Path
@@ -57,7 +57,7 @@ from tcia_utils import TCIAClient, DownloadError
 assert hasattr(tcia_utils, "format_table") and all(
     hasattr(TCIAClient, method)
     for method in ("download_manifest", "plan_participant_images", "download_images")
-) and "accept_data_policy" in inspect.signature(TCIAClient.download_manifest).parameters, "Run the installation cell for tcia_utils 4.0.0a11, restart your Python/Colab runtime, then run from the top."
+) and "accept_data_policy" in inspect.signature(TCIAClient.download_manifest).parameters, "Run the installation cell for tcia_utils 4.0.0a12, restart your Python/Colab runtime, then run from the top."
 format_table = tcia_utils.format_table
 pd.set_option("display.max_colwidth", 85)
 OUTPUT = Path(os.environ.get("TCIA_EXAMPLE_OUTPUT_DIR", "tcia-workshop-files"))
@@ -151,6 +151,7 @@ display(
             "download_title",
             "download_category",
             "download_requirements",
+            "download_method",
             "python_supported",
             "subjects",
             "studies",
@@ -172,7 +173,19 @@ md(r'''CMB-GEC is a good reminder that **a dataset is not always one download**.
 
 The download tables also show **patients/subjects, studies, series, and images** using the published `subjects`, `studies`, `series`, and `images` fields. These counts describe each **full download group**, not the small sample we'll try later. “Not reported” means the count is unavailable; it does not mean zero. Some counts do not apply to non-DICOM data. Groups can overlap, so adding their counts does not establish a total number of unique patients.
 
-The download plan includes a `download_requirements` column describing the published download instructions. `python_supported` tells us which groups this package can transfer using Python and pip-installed dependencies. These are separate from access approval: controlled files still require your approved key. Groups needing another application remain in the inventory with their official links, but this notebook does not install or run those applications. A manifest is a shopping list; it does not contain the images or grant access to controlled files.''')
+The download plan includes a `download_requirements` column describing the published download instructions. `python_supported` tells us which groups this package can transfer using Python and pip-installed dependencies. These are separate from access approval: controlled files still require your approved key. Groups needing another application remain in the inventory with their official links, but this notebook does not install or run those applications. A manifest is a shopping list; it does not contain the images or grant access to controlled files.
+
+`download_method` describes the kind of download link. It helps us choose the right next step:
+
+| `download_method` | What the link gives us |
+| --- | --- |
+| `dicom_manifest` | A list of DICOM series to download. |
+| `tabular_manifest` | A table listing files to download. |
+| `direct_file` | The file itself, which may be an archive. |
+| `aspera_package` | A package requiring a separate transfer application. |
+| `unsupported` | A link without a supported Python download route. |
+
+The next cell keeps `dicom_manifest` and `tabular_manifest` in `manifest_groups` because `save_manifests()` saves these small lists. We leave direct-file and package links in the inventory; saving those links as if they were manifests would not give us a list of images.''')
 
 code(r'''download_plan = downloads
 python_groups = download_plan[download_plan["python_supported"]]
@@ -188,6 +201,7 @@ display(
             "download_title",
             "download_category",
             "download_requirements",
+            "download_method",
             "python_supported",
             "subjects",
             "studies",
@@ -226,6 +240,8 @@ Run the next cell to download one DICOM series into a sample folder. The report 
 
 After checking the sample, use a separate destination and omit `max_items` to request the full manifest.
 
+We choose `OUTPUT / "samples"` as the download root. The transfer package organizes the images underneath it by collection, participant, study, and series. We do not need to add the dataset name or a manifest identifier to that path. For a full download, choose a root such as `OUTPUT / "full-download"` and omit `max_items`. Small transfer lists and transfer metadata may appear alongside the collection folders.
+
 Normal downloads request a new copy; files already present may be downloaded again. To continue an interrupted download, keep the same destination and add `resume=True`. The transfer package checks existing files according to its supported routes. This is not a guarantee of resuming at the exact byte where a connection stopped. ZIP archives may be extracted automatically. A successful sample does not establish that every remaining item is available or that an image and segmentation match.''')
 
 code(r'''public_manifest = next(
@@ -233,7 +249,7 @@ code(r'''public_manifest = next(
 )
 
 report = tcia.download_manifest(
-    OUTPUT / public_manifest["manifest"], OUTPUT / "samples" / DATASET, max_items=1, accept_data_policy=True
+    OUTPUT / public_manifest["manifest"], OUTPUT / "samples", max_items=1, accept_data_policy=True
 )
 display(report.to_dataframe())''', tags=['sample-download'])
 
@@ -256,7 +272,7 @@ controlled_manifest = next(item for item in saved_manifests if item["route_colum
 if DOWNLOAD_CONTROLLED_CMB:
     report = tcia.download_manifest(
         controlled_manifest["url"],  # A URL works just like a local manifest path.
-        OUTPUT / "samples" / DATASET,
+        OUTPUT / "samples",
         credential_file=CREDENTIAL_FILE,
         accept_data_policy=True,
         max_items=1,
@@ -657,6 +673,7 @@ display(
             "download_title",
             "download_category",
             "download_requirements",
+            "download_method",
             "python_supported",
             "subjects",
             "studies",
@@ -728,6 +745,7 @@ display(
             "download_title",
             "download_category",
             "download_requirements",
+            "download_method",
             "python_supported",
             "subjects",
             "studies",
@@ -878,7 +896,7 @@ Useful links: [TCIA Dataset Explorer](https://www.cancerimagingarchive.net/datas
 notebook = nbf.v4.new_notebook(cells=cells, metadata={
     "kernelspec": {"display_name":"Python 3", "language":"python", "name":"python3"},
     "language_info": {"name":"python", "version":"3.11"},
-    "tcia_workshop": {"package_version":"4.0.0a11", "default_mode":"live_public_samples",
+    "tcia_workshop": {"package_version":"4.0.0a12", "default_mode":"live_public_samples",
         "payload_downloads_default":True, "public_sample_max_items":1,
         "controlled_downloads_default":False, "audience":"junior data scientists"}})
 for i, cell in enumerate(notebook.cells): cell.id = f"tcia-workshop-{i:02d}"
