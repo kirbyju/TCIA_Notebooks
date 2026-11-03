@@ -289,15 +289,18 @@ code(r'''citation = tcia.get_citation(collection["doi"], style="apa")
 print(citation.data["record"]["formatted_citation"])
 (OUTPUT / "CMB-GEC_citation.json").write_text(json.dumps(citation.data, indent=2))''')
 
-md(r'''## 2. Which participants have the modality and diagnosis I need?
+md(r'''## 2. Which participants match my modality, diagnosis, and disease site?
 
-Suppose we want CT images from participants whose available diagnosis includes “Carcinoma.” We'll search **CMB-GEC and CMB-LCA together**. Change the collection list, modality, and diagnosis text to try your own question. Removing the collection restriction would search much more broadly and take longer.
+Suppose we want **CT** images from participants whose available **diagnosis includes “Carcinoma”** and whose **primary disease site includes “Lung.”** These three conditions must all match. We'll search CMB-LCA and NSCLC-Radiomics to find matches across datasets. We also include CMB-GEC so we can see how the disease-site filter narrows the selection.
 
-This is a participant query, not a search of collection descriptions. We'll first find participants with the selected modality, then match their available clinical information. Our diagnosis match is a simple, case-insensitive text search; it does not know that two different medical terms can mean the same thing.''')
+Choose the collection list and modality in the next cell. After inspecting the available clinical labels, choose the diagnosis and primary-site text in the clinical-filter cell below. For example, try `PRIMARY_SITE_TEXT = "Esophagus"` to look for gastroesophageal participants instead. This refers to the clinical `primary_site` field, not the body part covered by the CT scan. A scan may cover several regions or show metastases.
 
-code(r'''COHORT_COLLECTIONS = ["CMB-GEC", "CMB-LCA"]
+**There are two search steps here.** The first API call finds participants with the selected imaging modality. It returns **candidates**, not the final clinical cohort, because the current participant-search endpoint does not accept diagnosis or primary-site filters. We then collect their available clinical records and apply **both** clinical filters below. No images are downloaded by these queries.
+
+The text filters use case-insensitive substring matching. They do not expand medical synonyms: “Lung” can match “upper lobe of right lung,” but a different term such as “pulmonary” is not automatically equivalent. Start with these selected collections and inspect the reported labels before searching more broadly.''')
+
+code(r'''COHORT_COLLECTIONS = ["CMB-GEC", "CMB-LCA", "NSCLC-Radiomics"]
 COHORT_MODALITY = "CT"
-DIAGNOSIS_TEXT = "Carcinoma"
 candidates = tcia.search_participants(
     short_titles=COHORT_COLLECTIONS,
     dataset_type="collection",
@@ -309,7 +312,7 @@ if candidates.empty:
         columns=["short_title", "display_participant_id", "participant_key", "modalities"]
     )
     print("No participants matched. Try another collection or modality.")
-print("Candidate participant records:", len(candidates))
+print("Modality candidates before diagnosis/site filters:", len(candidates))
 display(
     candidates.reindex(
         columns=[
@@ -353,29 +356,48 @@ with_clinical = candidates.merge(
 print("Clinical linkage (no fuzzy ID matching):")
 display(with_clinical["clinical_link"].value_counts())
 print("Available diagnosis labels:")
-display(with_clinical["primary_diagnosis"].value_counts(dropna=False).to_frame("participants"))''')
+display(with_clinical["primary_diagnosis"].value_counts(dropna=False).to_frame("participants"))
+print("Available primary disease-site labels:")
+display(with_clinical["primary_site"].value_counts(dropna=False).to_frame("participants"))''')
 
-md(r'''Let's apply the diagnosis filter. In the **next code cell**, choose whether to allow diagnoses inferred from the dataset:
+md(r'''Now let's turn the modality candidates into our **final cohort**. The next cell requires a matching diagnosis **and** primary disease site. It keeps only those rows for the clinical summary and image-selection examples that follow.
 
-- Leave `INCLUDE_INFERRED_DIAGNOSES = True` to allow matching diagnosis labels, including inferred ones.
-- Set it to `False` to keep only matching diagnoses explicitly marked as reported for that participant. Rows with an unknown inference status are also left out.
+Choose whether to allow clinical labels inferred from the dataset:
 
-The results include a separate column, `primary_diagnosis_is_inferred`: `True` means the diagnosis was inferred, `False` means it was reported at the participant level, and a blank means the inference status is unknown. This column stays in the displayed table and the saved CSV/JSON so you can tell how each diagnosis was obtained. It is different from the `INCLUDE_INFERRED_DIAGNOSES` setting, which controls what we include. Change that setting and rerun the next cell to compare the cohorts; you do not need to repeat the earlier metadata queries.
+- Leave `INCLUDE_INFERRED_CLINICAL = True` to allow matching diagnosis and site labels, including inferred ones.
+- Set it to `False` to require **both** matching values to be explicitly marked as reported for that participant. Unknown inference status is excluded in that mode.
 
-We are counting **dataset-scoped participant records**. We have not deduplicated people across collections, and a missing clinical value does not mean a participant has no diagnosis. This cohort is limited to the selected collections and the information currently indexed.''')
+The displayed and exported rows retain separate `primary_diagnosis_is_inferred` and `primary_site_is_inferred` columns. `True` means inferred, `False` means reported at the participant level, and a blank means unknown. These columns describe each value's evidence; the setting above controls which evidence we accept.
 
-code(r'''INCLUDE_INFERRED_DIAGNOSES = True  # False keeps only explicitly reported diagnoses.
+You can change the diagnosis text, primary-site text, or inference setting and rerun the next cell using the clinical data already collected. Change the modality or collection list by rerunning this section from its first code cell.
 
-matches = (
+We are counting **dataset-scoped participant records**, not unique people deduplicated across collections. Missing clinical values do not establish the absence of disease. This cohort covers only the selected collections and the information currently indexed.''')
+
+code(r'''DIAGNOSIS_TEXT = "Carcinoma"
+PRIMARY_SITE_TEXT = "Lung"
+INCLUDE_INFERRED_CLINICAL = True  # False requires reported diagnosis AND site.
+
+if not DIAGNOSIS_TEXT.strip() or not PRIMARY_SITE_TEXT.strip():
+    raise ValueError("Choose nonempty DIAGNOSIS_TEXT and PRIMARY_SITE_TEXT values.")
+
+diagnosis_matches = (
     with_clinical["primary_diagnosis"]
     .astype("string")
-    .fillna("")
-    .str.contains(DIAGNOSIS_TEXT, case=False, regex=False)
+    .str.contains(DIAGNOSIS_TEXT, case=False, regex=False, na=False)
 )
-if not INCLUDE_INFERRED_DIAGNOSES:
-    matches &= with_clinical["primary_diagnosis_is_inferred"].eq(False)
+site_matches = (
+    with_clinical["primary_site"]
+    .astype("string")
+    .str.contains(PRIMARY_SITE_TEXT, case=False, regex=False, na=False)
+)
+matches = diagnosis_matches & site_matches
+if not INCLUDE_INFERRED_CLINICAL:
+    matches &= (
+        with_clinical["primary_diagnosis_is_inferred"].eq(False)
+        & with_clinical["primary_site_is_inferred"].eq(False)
+    )
 cohort = with_clinical.loc[matches].copy()
-print("Matching participant records:", len(cohort))
+print("Final cohort matching modality, diagnosis AND primary site:", len(cohort))
 display(
     cohort.reindex(
         columns=[
@@ -391,9 +413,9 @@ display(
         ]
     )
 )
-cohort.to_json(OUTPUT / "modality_diagnosis_cohort.json", orient="records", indent=2)
+cohort.to_json(OUTPUT / "modality_diagnosis_site_cohort.json", orient="records", indent=2)
 cohort.drop(columns=["resolved_values", "resolved_sources", "conflicts"]).to_csv(
-    OUTPUT / "modality_diagnosis_cohort.csv", index=False
+    OUTPUT / "modality_diagnosis_site_cohort.csv", index=False
 )''')
 
 md(r'''### What else do we know about these participants?
@@ -458,7 +480,7 @@ if example:
         OUTPUT / "example_participant_assets.json", orient="records", indent=2
     )
 else:
-    print("No matches. Try a diagnosis label from the table above.")''')
+    print("No matches. Try diagnosis and primary-site labels from the tables above.")''')
 
 code(r'''example_facts = []
 if example:
@@ -853,7 +875,8 @@ code(r'''run_record = {
         "collections": COHORT_COLLECTIONS,
         "modality": COHORT_MODALITY,
         "diagnosis_text": DIAGNOSIS_TEXT,
-        "include_inferred": INCLUDE_INFERRED_DIAGNOSES,
+        "primary_site_text": PRIMARY_SITE_TEXT,
+        "include_inferred": INCLUDE_INFERRED_CLINICAL,
     },
     "dataset_download_groups": len(download_plan),
     "clinical_ct_series": len(ct_images.rows),
@@ -885,7 +908,7 @@ print("Saved tables, manifests, and workshop_run.json in the notebook's output f
 
 md(r'''### Try your own question
 
-Change `COHORT_COLLECTIONS`, `COHORT_MODALITY`, and `DIAGNOSIS_TEXT`, then rerun section 2 onward. Start with a small set of collections so you can inspect their clinical labels and coverage before widening the search.
+Change `COHORT_COLLECTIONS`, `COHORT_MODALITY`, `DIAGNOSIS_TEXT`, and `PRIMARY_SITE_TEXT`, then rerun section 2 onward. Start with a small set of collections so you can inspect their clinical labels and coverage before widening the search.
 
 For another challenge, change `BRAIN_COLLECTIONS` and compare how many participants have segmentation files with checked versus unchecked geometry. Keep both categories visible until you've decided what your project actually requires.
 

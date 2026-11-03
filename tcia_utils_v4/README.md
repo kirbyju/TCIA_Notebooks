@@ -3,16 +3,16 @@
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/kirbyju/TCIA_Notebooks/blob/main/tcia_utils_v4/TCIA_Dataset_and_Participant_Queries.ipynb)
 
 The single guided workshop is written for junior data scientists. It covers
-CMB-GEC dataset discovery and downloads, CT/diagnosis cohorts across CMB-GEC and
-CMB-LCA, public brain MR/NIfTI segmentation metadata, and controlled CT/SEG
+CMB-GEC dataset discovery and downloads, combined CT/diagnosis/primary-site cohorts
+across CMB-LCA and NSCLC-Radiomics (with CMB-GEC as a site-filter comparison), public brain MR/NIfTI segmentation metadata, and controlled CT/SEG
 candidate selection. It explains public versus controlled access and DICOM versus
 other formats without requiring knowledge of the hosting infrastructure.
 
 The workshop installs tcia_utils 4.0.0a13 for Python 3.11+. In Colab, run the setup
 cell and restart the runtime when prompted. The hosted REST service must include
 query API 0.6.0+ with the shared participant image-planning route, as well as
-public slide descriptors and list-valued attributes. This update needs new service
-code but no metadata bundle schema change.
+public slide descriptors and list-valued attributes. This notebook update needs
+no new server code or metadata bundle schema change.
 
 All supported image/file transfers now delegate to the pip-installed
 `tcia-data-retriever==0.1.0rc2`. It bundles the headless transfer executable;
@@ -31,12 +31,11 @@ each with max_items=1. These limits count whole series/files, not bytes. Control
 examples remain off until an approved reader supplies their own key and enables
 them. resume=True requests the transfer package's skip-existing behavior; it is
 not a guarantee of partial-file byte-range resume. Ordinary copy mode can download
-existing files again. Progress is shown by default. The current TDR Python wrapper
-inherits console output even if SDK progress messages are disabled.
+existing files again. TDR RC2 streams plain progress lines into notebook output,
+even if SDK preparation messages are disabled.
 
-The current transfer package may keep a private copy of a supplied controlled key
-in its application cache. Its guide documents the platform-specific behavior.
-Use an isolated/temporary runtime when credential persistence is inappropriate.
+Supplied CLI/Python controlled keys are used for that invocation only, without a
+saved credential copy or fallback to desktop GUI credentials.
 The metadata service and SDK reports do not contain keys, tokens or signed URLs.
 No real controlled-access transfer was used to validate this update.
 
@@ -51,7 +50,16 @@ Maintainer checks use tools/test_workshop.py and tools/run_tcia_workshop.py. The
 runner exercises the installed wheel with recorded public metadata. Its private
 validation copy uses dry_run=True and accept_data_policy=False for public sample
 calls; controlled examples remain off. Independent HTTP/subprocess guards block
-image transfers. Recorded metadata and local projections are not deployment proof.
+image transfers. Recorded metadata describe their captured snapshot and are not
+proof that a later deployment or source update is equivalent.
+
+Participant search first collects modality candidates. The clinical-filter cell
+requires both diagnosis and primary-site text, with literal case-insensitive
+substring matching. Recorded-only mode requires both inference flags to be False;
+missing values cannot satisfy either required text filter. The site is the clinical
+primary_site field, not the scanned body part. Query settings, both inference flags
+and the metadata snapshot are retained with outputs. This workflow does not add
+clinical parameters to the current participant-search endpoint.
 
 The clinically filtered cohort examples plan public CMB-LCA CT or slide files for
 exactly the selected participants. Coverage includes zero matches; unresolved

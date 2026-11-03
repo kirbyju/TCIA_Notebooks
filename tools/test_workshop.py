@@ -178,30 +178,52 @@ def test_notebook_does_not_install_or_invoke_external_download_applications():
     assert 'python_supported' in text
 
 
-@pytest.mark.parametrize('include_inferred,expected', [(True,['reported','inferred','unknown']), (False,['reported'])])
-def test_diagnosis_control_is_next_to_filter_and_export_retains_row_provenance(tmp_path,include_inferred,expected):
+@pytest.mark.parametrize('include_inferred,expected', [
+    (True, ['reported', 'inferred_diagnosis', 'inferred_site', 'unknown_evidence']),
+    (False, ['reported']),
+])
+def test_clinical_filters_require_diagnosis_and_site_and_retain_evidence(tmp_path, include_inferred, expected):
     rows=[]
-    for name,inferred,diagnosis in [('reported',False,'Carcinoma'),('inferred',True,'Carcinoma'),
-                                     ('unknown',None,'Carcinoma'),('other',False,'Other diagnosis')]:
+    for name,diagnosis,site,diagnosis_inferred,site_inferred in [
+        ('reported','CARCINOMA','Upper lobe of right lung',False,False),
+        ('inferred_diagnosis','Carcinoma','Lung',True,False),
+        ('inferred_site','Carcinoma','Lung',False,True),
+        ('unknown_evidence','Carcinoma','Lung',None,None),
+        ('wrong_diagnosis','Sarcoma','Lung',False,False),
+        ('wrong_site','Carcinoma','Esophagus',False,False),
+        ('missing_diagnosis',None,'Lung',False,False),
+        ('missing_site','Carcinoma',None,False,False),
+    ]:
         rows.append({'short_title':'EXAMPLE','display_participant_id':name,
-                     'primary_diagnosis':diagnosis,'primary_diagnosis_is_inferred':inferred,
+                     'primary_diagnosis':diagnosis,'primary_site':site,
+                     'primary_diagnosis_is_inferred':diagnosis_inferred,
+                     'primary_site_is_inferred':site_inferred,
                      'resolved_values':{},'resolved_sources':{},'conflicts':[]})
     tree=ast.parse(source_containing('matches ='))
-    assert isinstance(tree.body[0],ast.Assign)
-    assert tree.body[0].targets[0].id=='INCLUDE_INFERRED_DIAGNOSES'
-    tree.body[0].value=ast.Constant(include_inferred)
-    ns={'format_table':format_table,'pd':pd,'with_clinical':pd.DataFrame(rows),'DIAGNOSIS_TEXT':'carcinoma',
+    setting=next(node for node in tree.body if isinstance(node,ast.Assign)
+                 and any(isinstance(t,ast.Name) and t.id=='INCLUDE_INFERRED_CLINICAL' for t in node.targets))
+    setting.value=ast.Constant(include_inferred)
+    ns={'format_table':format_table,'pd':pd,'with_clinical':pd.DataFrame(rows),
         'OUTPUT':tmp_path,'display':lambda *a:None}
     with redirect_stdout(io.StringIO()):exec(compile(ast.fix_missing_locations(tree),str(NOTEBOOK),'exec'),ns)
     assert ns['cohort'].display_participant_id.tolist()==expected
-    csv=pd.read_csv(tmp_path/'modality_diagnosis_cohort.csv')
-    exported=pd.read_json(tmp_path/'modality_diagnosis_cohort.json')
-    assert csv.display_participant_id.tolist()==expected
-    assert exported.display_participant_id.tolist()==expected
+    csv=pd.read_csv(tmp_path/'modality_diagnosis_site_cohort.csv')
+    exported=pd.read_json(tmp_path/'modality_diagnosis_site_cohort.json')
+    assert csv.display_participant_id.tolist()==exported.display_participant_id.tolist()==expected
+    assert {'primary_diagnosis_is_inferred','primary_site_is_inferred'}.issubset(csv.columns)
     assert csv.loc[0,'primary_diagnosis_is_inferred']==False
-    if include_inferred:
-        assert csv.loc[1,'primary_diagnosis_is_inferred']==True
-        assert pd.isna(csv.loc[2,'primary_diagnosis_is_inferred'])
+    assert csv.loc[0,'primary_site_is_inferred']==False
+
+
+@pytest.mark.parametrize('setting', ['DIAGNOSIS_TEXT', 'PRIMARY_SITE_TEXT'])
+def test_empty_clinical_text_does_not_accidentally_match_everyone(tmp_path, setting):
+    tree=ast.parse(source_containing('matches ='))
+    node=next(node for node in tree.body if isinstance(node,ast.Assign)
+              and any(isinstance(t,ast.Name) and t.id==setting for t in node.targets))
+    node.value=ast.Constant('  ')
+    with pytest.raises(ValueError,match='nonempty'):
+        exec(compile(ast.fix_missing_locations(tree),str(NOTEBOOK),'exec'),
+             {'OUTPUT':tmp_path,'pd':pd,'format_table':format_table,'display':lambda *a:None})
 
 
 def test_clinical_downloads_use_the_same_tcia_interface_and_keep_the_cohort(tmp_path, monkeypatch):
