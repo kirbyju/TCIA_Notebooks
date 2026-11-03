@@ -36,7 +36,7 @@ Run the next cell to install the packages used in this lab. In Colab, run the no
 
 code(r'''import subprocess, sys
 subprocess.check_call(
-    [sys.executable, "-m", "pip", "install", "tcia_utils[tables,downloads]==4.0.0a12", "nibabel>=5,<6"]
+    [sys.executable, "-m", "pip", "install", "tcia_utils[tables,downloads]==4.0.0a13", "nibabel>=5,<6"]
 )''', tags=['installation'])
 
 code(r'''from pathlib import Path
@@ -57,7 +57,7 @@ from tcia_utils import TCIAClient, DownloadError
 assert hasattr(tcia_utils, "format_table") and all(
     hasattr(TCIAClient, method)
     for method in ("download_manifest", "plan_participant_images", "download_images")
-) and "accept_data_policy" in inspect.signature(TCIAClient.download_manifest).parameters, "Run the installation cell for tcia_utils 4.0.0a12, restart your Python/Colab runtime, then run from the top."
+) and "accept_data_policy" in inspect.signature(TCIAClient.download_manifest).parameters, "Run the installation cell for tcia_utils 4.0.0a13, restart your Python/Colab runtime, then run from the top."
 format_table = tcia_utils.format_table
 pd.set_option("display.max_colwidth", 85)
 OUTPUT = Path(os.environ.get("TCIA_EXAMPLE_OUTPUT_DIR", "tcia-workshop-files"))
@@ -228,7 +228,7 @@ display(manifest_report.to_dataframe())''')
 
 md(r'''### Download directly from Python
 
-Let's start with the **public DICOM imaging group**. We already saved its manifest, so we can pass that file straight to `tcia.download_manifest()`. The package reads the identifiers and handles the transfer; we do not need to parse the file ourselves. It prints “Preparing download selection…” immediately and shows transfer progress automatically. The setup cell installs the transfer package; download calls do not install software.
+Let's start with the **public DICOM imaging group**. We already saved its manifest, so we can pass that file straight to `tcia.download_manifest()`. The package reads the identifiers and handles the transfer; we do not need to parse the file ourselves. It prints “Preparing download selection…” immediately, then shows periodic transfer-progress lines in the cell output. These normally arrive about every five seconds, with byte counts or percentages when available, and a final result. A short transfer may finish before a periodic update. The setup cell installs the transfer package; download calls do not install software.
 
 This function accepts a **local path or an HTTPS URL**, for either a `.tcia` manifest or a supported CSV/TSV manifest. It reads the manifest's route column and chooses the appropriate download method. If part of the requested selection is unavailable, it tells us rather than silently dropping those files.
 
@@ -261,7 +261,7 @@ Other collections may offer non-DICOM files through Python-supported manifests o
 
 md(r'''### Download the controlled group after approval
 
-For controlled images, the Python function also needs the **path** to your own JSON API key. It uses the official file identifiers and the authorized service. The transfer package may save a private copy of the key in its local application cache. See its [credential-storage guidance](https://github.com/TCIA/data-retriever/blob/618d8bc4e493cabc20b9afc41d54a3ce8a2b0df5/python/README.md). Use an isolated or temporary environment if you do not want that credential retained on this computer. Don't paste key contents into a notebook, repository, or chat.
+For controlled images, the Python function also needs the **path** to your own JSON API key. It uses the official file identifiers and the authorized service. The transfer package uses the supplied key for this download invocation only; it does not save a credential copy or reuse a desktop application's saved key. See its [credential guidance](https://github.com/TCIA/data-retriever/blob/2dcad4bd6fe0bd62b42e67834d0ad42240694f42/docs/cli-progress-and-credentials.md). Don't paste key contents into a notebook, repository, or chat.
 
 Leave the next cell unchanged to continue without a controlled download. An approved user can enter a key-file path and set `DOWNLOAD_CONTROLLED_CMB = True` to try the first file in the manifest. It still needs the same authorization as a larger download. Authorization for one study may not cover another.''')
 
@@ -896,7 +896,7 @@ Useful links: [TCIA Dataset Explorer](https://www.cancerimagingarchive.net/datas
 notebook = nbf.v4.new_notebook(cells=cells, metadata={
     "kernelspec": {"display_name":"Python 3", "language":"python", "name":"python3"},
     "language_info": {"name":"python", "version":"3.11"},
-    "tcia_workshop": {"package_version":"4.0.0a12", "default_mode":"live_public_samples",
+    "tcia_workshop": {"package_version":"4.0.0a13", "default_mode":"live_public_samples",
         "payload_downloads_default":True, "public_sample_max_items":1,
         "controlled_downloads_default":False, "audience":"junior data scientists"}})
 for i, cell in enumerate(notebook.cells): cell.id = f"tcia-workshop-{i:02d}"
