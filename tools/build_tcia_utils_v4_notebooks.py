@@ -36,7 +36,7 @@ Run the next cell to install the packages used in this lab. In Colab, run the no
 
 code(r'''import subprocess, sys
 subprocess.check_call(
-    [sys.executable, "-m", "pip", "install", "tcia_utils[tables,downloads]==4.0.0a9", "nibabel>=5,<6"]
+    [sys.executable, "-m", "pip", "install", "tcia_utils[tables,downloads]==4.0.0a11", "nibabel>=5,<6"]
 )''', tags=['installation'])
 
 code(r'''from pathlib import Path
@@ -57,7 +57,7 @@ from tcia_utils import TCIAClient, DownloadError
 assert hasattr(tcia_utils, "format_table") and all(
     hasattr(TCIAClient, method)
     for method in ("download_manifest", "plan_participant_images", "download_images")
-) and "accept_data_policy" in inspect.signature(TCIAClient.download_manifest).parameters, "Run the installation cell for tcia_utils 4.0.0a9, restart your Python/Colab runtime, then run from the top."
+) and "accept_data_policy" in inspect.signature(TCIAClient.download_manifest).parameters, "Run the installation cell for tcia_utils 4.0.0a11, restart your Python/Colab runtime, then run from the top."
 format_table = tcia_utils.format_table
 pd.set_option("display.max_colwidth", 85)
 OUTPUT = Path(os.environ.get("TCIA_EXAMPLE_OUTPUT_DIR", "tcia-workshop-files"))
@@ -82,10 +82,10 @@ There are also two independent choices to understand:
 
 | Choice | What it means for us |
 | --- | --- |
-| Public or controlled access | Public files can be retrieved under their license. Controlled files require approval before download, even when their descriptions are public. |
+| Open access or controlled access | Open-access files can be retrieved under their license. Controlled-access files require an approved user account and agreement to the applicable data usage terms before download, even when their descriptions are public. |
 | DICOM or non-DICOM | DICOM is a medical imaging format. Other useful formats include NIfTI image volumes, SVS tissue slides, spreadsheets, and archives. Non-DICOM does not mean non-image. |
 
-A single collection can contain several combinations. **Public** also does not mean unrestricted use: read each download's license, including any noncommercial condition.
+A single collection can contain several combinations. **Open access** also does not mean unrestricted use: read each download's license, including any noncommercial condition.
 
 Start in the [TCIA Dataset Explorer](https://www.cancerimagingarchive.net/dataset-explorer/). Try a cancer-location filter and a modality filter, then open a matching collection's page. For this lesson, choose **CMB-GEC**, open its **Data Access** tab, and note the separate download/manifest links and licenses. The Explorer helps us find the dataset; its page describes the individual download groups.
 
@@ -119,11 +119,17 @@ display(
 
 md(r'''The `data_categories` column tells us what kinds of downloadable data a collection publishes, such as radiology or pathology images. `download_data_types` shows modalities and other data types, while `download_file_types` shows formats. External resources, such as linked clinical information, stay in their own column.
 
+**What does “external” mean?** These are related data or tools hosted and maintained outside TCIA. The external materials have not been curated by TCIA staff, and TCIA does not control their content, updates, or availability. For example, a link may stop working if the organization hosting it has a site outage. Follow the resource's own instructions and contact its maintainers when you need help with it.
+
 Multi-value fields are Python lists, even when there is only one value. An empty list means no value was reported.
 
 These are **collection-level** labels. Finding a collection with CT and a cancer label does not tell us that every participant has both. We'll check participant-level information in section 2.
 
-Now let's open CMB-GEC. The download table is especially useful: it tells us which files are public, which need approval, and which formats we'll receive.''')
+Now let's open CMB-GEC. The download table is especially useful: it tells us which files are **open access**, which are **controlled access** (requiring user accounts and data usage agreements), and which formats we'll receive.
+
+We'll use `get_dataset()` for the dataset description and `plan_downloads()` to **review the download options**. A collection can have several download groups with different formats, access terms, and software requirements. `plan_downloads()` brings those details together and tells us which groups have a supported Python download route. It fetches metadata only: it does not download images, install software, or check whether we personally have access approval.
+
+This review step helps us choose the groups we need before downloading. It is optional: `download_dataset()` does the same planning internally, and `download_manifest()` can use an existing manifest directly.''')
 
 code(r'''DATASET = "CMB-GEC"
 detail = tcia.get_dataset(DATASET)
@@ -872,7 +878,7 @@ Useful links: [TCIA Dataset Explorer](https://www.cancerimagingarchive.net/datas
 notebook = nbf.v4.new_notebook(cells=cells, metadata={
     "kernelspec": {"display_name":"Python 3", "language":"python", "name":"python3"},
     "language_info": {"name":"python", "version":"3.11"},
-    "tcia_workshop": {"package_version":"4.0.0a9", "default_mode":"live_public_samples",
+    "tcia_workshop": {"package_version":"4.0.0a11", "default_mode":"live_public_samples",
         "payload_downloads_default":True, "public_sample_max_items":1,
         "controlled_downloads_default":False, "audience":"junior data scientists"}})
 for i, cell in enumerate(notebook.cells): cell.id = f"tcia-workshop-{i:02d}"
