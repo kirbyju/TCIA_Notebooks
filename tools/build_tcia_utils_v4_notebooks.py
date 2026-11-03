@@ -32,11 +32,11 @@ md(r'''## Let's get set up
 
 Run the next cell to install the packages used in this lab. In Colab, run the notebook from the top. In Jupyter, use a fresh Python 3.11+ environment. Restart the Python session if prompted after installation.
 
-`pandas` helps us work with tables, and `nibabel` is used by the optional NIfTI header check. The separate `idc-index` package supports the optional IDC imaging section; it is installed explicitly alongside `tcia_utils`. Download support is included, but querying the metadata does not download any images.''')
+`pandas` helps us work with tables, and `nibabel` is used by the optional NIfTI header check. Download support is included, but querying the metadata does not download any images.''')
 
 code(r'''import subprocess, sys
 subprocess.check_call(
-    [sys.executable, "-m", "pip", "install", "tcia_utils[tables,downloads]==4.0.0a8", "idc-index==0.13.4", "idc-index-data==25.0.5", "nibabel>=5,<6"]
+    [sys.executable, "-m", "pip", "install", "tcia_utils[tables,downloads]==4.0.0a9", "nibabel>=5,<6"]
 )''', tags=['installation'])
 
 code(r'''from pathlib import Path
@@ -57,13 +57,11 @@ from tcia_utils import TCIAClient, DownloadError
 assert hasattr(tcia_utils, "format_table") and all(
     hasattr(TCIAClient, method)
     for method in ("download_manifest", "plan_participant_images", "download_images")
-) and "accept_data_policy" in inspect.signature(TCIAClient.download_manifest).parameters, "Run the installation cell for tcia_utils 4.0.0a8, restart your Python/Colab runtime, then run from the top."
+) and "accept_data_policy" in inspect.signature(TCIAClient.download_manifest).parameters, "Run the installation cell for tcia_utils 4.0.0a9, restart your Python/Colab runtime, then run from the top."
 format_table = tcia_utils.format_table
 pd.set_option("display.max_colwidth", 85)
 OUTPUT = Path(os.environ.get("TCIA_EXAMPLE_OUTPUT_DIR", "tcia-workshop-files"))
 OUTPUT.mkdir(parents=True, exist_ok=True)
-ct_series = None
-IDC_VERSION = None
 BASE_URL = os.environ.get("TCIA_REST_BASE_URL", "https://tcia.duckdns.org")
 tcia = TCIAClient(base_url=BASE_URL, timeout=120, pin_snapshot=True)
 status = tcia.status()
@@ -474,49 +472,33 @@ if example:
     (OUTPUT / "example_clinical_facts.json").write_text(json.dumps(facts.data, indent=2))
     (OUTPUT / "example_clinical_conflicts.json").write_text(json.dumps(conflicts.data, indent=2))''')
 
-md(r'''### Optional: explore this radiology cohort with IDC
+md(r'''### From this clinical cohort to radiology images
 
-Now that we have our participant list, let's use it to choose some images. We'll keep the **CMB-LCA participants in `cohort`**, so the diagnosis and inference settings we just used still apply.
+Now that we have our participant list, let's use it to choose some images. We'll keep the **CMB-LCA participants in `cohort`**, so the clinical criteria we just used still apply.
 
-For this additional step we'll use **NCI Imaging Data Commons (IDC)**. Its separate `idc-index` package provides detailed public DICOM series metadata and other [imaging exploration tools](https://learn.canceridc.dev/). We call IDC directly here. You can skip this section and continue with TCIA's pathology and other examples.
+For radiology, ask for **CT in DICOM format**. `plan_participant_images()` resolves the matching public series and reports coverage for each selected participant, including those with no matches. The same function will select non-DICOM pathology files in the next example. Metadata sources and versions stay with the plan; we do not need to choose a separate query service.
 
-Our example uses IDC's explicit collection ID `cmb_lca` and the [CMB-LCA dataset DOI](https://doi.org/10.7937/3cx3-s132). Together with the participant IDs, these keep the selection within this dataset. We also filter for **CT**, so the selection keeps the clinical filters and adds the desired image modality. IDC has its own versioned index; we record that version separately from TCIA's metadata snapshot.
-
-The coverage table includes participants with no matching CT series. We save the selected Series UIDs to a CSV manifest, then use `tcia_utils` to download a sample with `max_items=1`: **one whole CT series**, including its image files. Omit that limit to download all series in this manifest after reviewing the selection. A single series can still be large.''')
+The next cell inspects the plan and downloads a sample. `max_items=1` selects **one whole CT series**, including its image files. Omit that limit after reviewing the plan to download all selected public CT series. A single series can still be large. If a participant identifier or route cannot be resolved, the plan explains why and the download stops for review.''')
 
 code(r'''clinical_image_participants = cohort[
     cohort["short_title"].eq("CMB-LCA") & cohort["dataset_type"].str.casefold().eq("collection")
 ].copy()
-
-from idc_index import IDCClient
-idc = IDCClient()
-IDC_VERSION = idc.get_idc_version()
-IDC_COLLECTION_ID = "cmb_lca"
-CMB_LCA_DOI = "10.7937/3cx3-s132"
-ct_series = idc.index.loc[
-    idc.index["collection_id"].eq(IDC_COLLECTION_ID)
-    & idc.index["source_DOI"].eq(CMB_LCA_DOI)
-    & idc.index["PatientID"].isin(clinical_image_participants["display_participant_id"])
-    & idc.index["Modality"].eq("CT")
-].sort_values(["PatientID", "StudyInstanceUID", "SeriesInstanceUID"]).drop_duplicates("SeriesInstanceUID")
-print("IDC index version:", IDC_VERSION)
-
-ct_coverage = clinical_image_participants[["short_title", "display_participant_id"]].drop_duplicates().copy()
-ct_coverage["matching_ct_series"] = ct_coverage["display_participant_id"].map(
-    ct_series.groupby("PatientID").size()
-).fillna(0).astype(int)
-display(ct_coverage)
-display(ct_series.reindex(columns=["PatientID", "StudyInstanceUID", "SeriesInstanceUID",
-                                   "Modality", "instanceCount", "series_size_MB"]))
-ct_series.to_csv(OUTPUT / "idc_clinical_ct_series.csv", index=False)
-ct_manifest = OUTPUT / "clinical-ct-series.csv"
-ct_series[["SeriesInstanceUID"]].to_csv(ct_manifest, index=False)
-
-if not ct_series.empty:
-    report = tcia.download_manifest(ct_manifest, OUTPUT / "clinical-ct-sample", max_items=1, accept_data_policy=True)
+ct_images = tcia.plan_participant_images(
+    clinical_image_participants, modality="CT", file_format="DICOM"
+)
+display(ct_images.coverage_to_dataframe())
+display(ct_images.to_dataframe().reindex(
+    columns=["short_title", "participant_id", "study_instance_uid", "series_instance_uid",
+             "modality", "file_format", "instance_count", "size_bytes", "provider"]
+))
+if ct_images.unresolved:
+    display(pd.DataFrame(ct_images.unresolved))
+    print("Image selection is unresolved; review these issues before downloading.")
+elif ct_images.rows:
+    report = tcia.download_images(ct_images, OUTPUT / "clinical-ct-sample", max_items=1, accept_data_policy=True)
     display(report.to_dataframe())
 else:
-    print("No matching public CT series were found in this IDC index.")''', tags=['sample-download'])
+    print("No matching public CT series were found.")''', tags=['sample-download'])
 
 md(r'''### Use the same clinical cohort for whole-slide pathology images
 
@@ -541,8 +523,8 @@ display(
 )
 if slide_images.unresolved:
     display(pd.DataFrame(slide_images.unresolved))
-
-if slide_images.rows:
+    print("Image selection is unresolved; review these issues before downloading.")
+elif slide_images.rows:
     report = tcia.download_images(slide_images, OUTPUT / "clinical-slide-sample", max_items=1, accept_data_policy=True)
     display(report.to_dataframe())
 else:
@@ -850,9 +832,10 @@ code(r'''run_record = {
         "include_inferred": INCLUDE_INFERRED_DIAGNOSES,
     },
     "dataset_download_groups": len(download_plan),
-    "clinical_ct_series": None if ct_series is None else len(ct_series),
+    "clinical_ct_series": len(ct_images.rows),
     "clinical_slide_files": len(slide_images.rows),
-    "clinical_ct_index_version": IDC_VERSION,
+    "clinical_ct_index_version": ct_images.providers.get("IDC", {}).get("idc_version"),
+    "image_planning_providers": ct_images.providers,
     "saved_manifests": saved_manifests,
     "external_download_ids": external_groups["download_id"].tolist(),
     "candidate_records": len(candidates),
@@ -882,12 +865,14 @@ Change `COHORT_COLLECTIONS`, `COHORT_MODALITY`, and `DIAGNOSIS_TEXT`, then rerun
 
 For another challenge, change `BRAIN_COLLECTIONS` and compare how many participants have segmentation files with checked versus unchecked geometry. Keep both categories visible until you've decided what your project actually requires.
 
+For advanced public DICOM metadata queries and viewers beyond this tutorial, [NCI Imaging Data Commons (IDC)](https://learn.canceridc.dev/) provides its own tools. The shared image plan retains IDC attribution when its metadata is used.
+
 Useful links: [TCIA Dataset Explorer](https://www.cancerimagingarchive.net/dataset-explorer/), [CMB-GEC](https://www.cancerimagingarchive.net/collection/cmb-gec/), [UCSF-PDGM](https://www.cancerimagingarchive.net/collection/ucsf-pdgm/), [UPENN-GBM](https://www.cancerimagingarchive.net/collection/upenn-gbm/), [HEAD-NECK-RADIOMICS-HN1](https://www.cancerimagingarchive.net/collection/head-neck-radiomics-hn1/), [controlled-access instructions](https://www.cancerimagingarchive.net/nih-controlled-data-access-policy/).''')
 
 notebook = nbf.v4.new_notebook(cells=cells, metadata={
     "kernelspec": {"display_name":"Python 3", "language":"python", "name":"python3"},
     "language_info": {"name":"python", "version":"3.11"},
-    "tcia_workshop": {"package_version":"4.0.0a8", "default_mode":"live_public_samples",
+    "tcia_workshop": {"package_version":"4.0.0a9", "default_mode":"live_public_samples",
         "payload_downloads_default":True, "public_sample_max_items":1,
         "controlled_downloads_default":False, "audience":"junior data scientists"}})
 for i, cell in enumerate(notebook.cells): cell.id = f"tcia-workshop-{i:02d}"
