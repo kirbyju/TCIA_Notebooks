@@ -8,7 +8,7 @@ CMB-LCA, public brain MR/NIfTI segmentation metadata, and controlled CT/SEG
 candidate selection. It explains public versus controlled access and DICOM versus
 other formats without requiring knowledge of the hosting infrastructure.
 
-The workshop installs tcia_utils 4.0.0a11 for Python 3.11+. In Colab, run the setup
+The workshop installs tcia_utils 4.0.0a12 for Python 3.11+. In Colab, run the setup
 cell and restart the runtime when prompted. The hosted REST service must include
 query API 0.6.0+ with the shared participant image-planning route, as well as
 public slide descriptors and list-valued attributes. This update needs new service
