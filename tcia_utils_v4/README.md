@@ -29,15 +29,21 @@ Read the TCIA data usage policy before running transfer cells. Those calls pass
 accept_data_policy=True explicitly. The three public sample cells run directly,
 each with max_items=1. These limits count whole series/files, not bytes. Controlled
 examples remain off until an approved reader supplies their own key and enables
-them. resume=True requests the transfer package's skip-existing behavior; it is
-not a guarantee of partial-file byte-range resume. Ordinary copy mode can download
-existing files again. TDR RC2 streams plain progress lines into notebook output,
+them. To expand a sample, keep the same destination and omit max_items; the
+transfer package can reuse existing files without resume=True. That option
+explicitly requests skip-existing checks, not partial-file byte-range resume.
+In RC2, reused direct/controlled files are counted under Downloaded; Synced is
+specific to the public DICOM sync route. TDR RC2 streams plain progress lines into notebook output,
 even if SDK preparation messages are disabled.
 
 Supplied CLI/Python controlled keys are used for that invocation only, without a
 saved credential copy or fallback to desktop GUI credentials.
 The metadata service and SDK reports do not contain keys, tokens or signed URLs.
 No real controlled-access transfer was used to validate this update.
+Standalone file-manifest downloads use the SDK's generic manifest collection
+label, and TDR preserves supplied archive filenames. This can differ from the
+public DICOM hierarchy. Direct/controlled ZIP files remain archives. Use known
+dataset context consistently if choosing download_dataset() instead.
 
 External-only Aspera groups remain in the inventory with counts, published
 requirements and official links. Separate application notebooks cover them.
