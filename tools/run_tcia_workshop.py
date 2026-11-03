@@ -94,6 +94,8 @@ assert all(entry['status'] == 'planned' for entry in report.entries)
 assert not SOURCE_NIFTI and not MASK_NIFTI
 assert len(cohort) > 0 and len(brain_cohort) > 0 and len(face_selection) > 0
 assert cohort['short_title'].nunique() >= 2, 'Default cohort must actually span datasets.'
+assert cohort.primary_diagnosis.str.contains(DIAGNOSIS_TEXT, case=False, regex=False, na=False).all()
+assert cohort.primary_site.str.contains(PRIMARY_SITE_TEXT, case=False, regex=False, na=False).all()
 assert {'CT', 'SEG'}.issubset(set(face_selection['modality']))
 assert set(face_selection['access_level']) == {'controlled'}
 assert len(download_plan) == len(python_groups) + len(external_groups)
@@ -116,6 +118,8 @@ _report = {'fingerprint': SNAPSHOT, 'dataset_groups': len(download_plan),
     'python_download_groups': len(python_groups), 'external_download_groups': len(external_groups), 'manifest_download_groups': len(manifest_groups),
     'candidate_participant_records': len(candidates), 'matched_participant_records': len(cohort),
     'matched_collections': sorted(cohort['short_title'].unique().tolist()),
+    'clinical_filters': {'diagnosis_text':DIAGNOSIS_TEXT,'primary_site_text':PRIMARY_SITE_TEXT,
+                         'include_inferred':INCLUDE_INFERRED_CLINICAL},
     'resolved_clinical_values': len(clinical_summary), 'example_clinical_facts': len(example_facts),
     'brain_participant_records': int(brain_cohort['participant_key'].nunique()),
     'brain_segmentation_files': len(brain_cohort), 'brain_example_files': len(brain_files),
