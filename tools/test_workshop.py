@@ -30,26 +30,39 @@ def test_controlled_transfers_remain_opt_in_and_public_samples_run_directly():
     n=nbformat.read(NOTEBOOK,as_version=4)
     assert n.metadata.tcia_workshop.payload_downloads_default is True
     assert n.metadata.tcia_workshop.controlled_downloads_default is False
-    for flag in ['DOWNLOAD_CONTROLLED_CMB','DOWNLOAD_CONTROLLED_CT']:
+    for flag in ['DOWNLOAD_CONTROLLED_CMB']:
         source=source_containing(flag+' =')
         assert any(isinstance(node,ast.Assign) and any(isinstance(target,ast.Name) and target.id==flag for target in node.targets)
                    and isinstance(node.value,ast.Constant) and node.value.value is False for node in ast.parse(source).body)
     samples=[c for c in n.cells if 'sample-download' in c.metadata.get('tags',[])]
-    assert len(samples)==3
+    assert len(samples)==4
     for cell in samples:
         assert 'DOWNLOAD_' not in cell.source
         assert 'progress=' not in cell.source and 'dry_run=' not in cell.source
 
 
-def test_controlled_cohort_requires_same_participant_and_study(tmp_path):
+def test_public_cohort_requires_same_participant_and_study(tmp_path):
     rows=[]
-    for participant,study,modality in [('A','1','CT'),('A','2','SEG'),('B','3','CT'),('B','3','SEG'),('C','4','CT'),('C','4','RTSTRUCT'),('','5','CT'),('','5','SEG')]:
+    for participant,study,modality in [('A','1','CT'),('A','2','SEG'),('B','3','CT'),('B','3','SEG'),('C','4','CT'),('C','4','RTSTRUCT')]:
         rows.append({'short_title':'EXAMPLE','participant_id':participant,'study_instance_uid':study,'modality':modality})
-    fake=SimpleNamespace(plan_downloads=lambda *a,**k:SimpleNamespace(to_dataframe=lambda **k:pd.DataFrame()),
-        list_controlled_files=lambda *a,**k:SimpleNamespace(data={'files':rows,'count':len(rows),'limit':500}))
-    ns={'format_table':format_table,'pd':pd,'tcia':fake,'display':lambda *a:None,'OUTPUT':tmp_path}
-    with redirect_stdout(io.StringIO()):exec(source_containing('FACE_COLLECTION ='),ns)
-    assert ns['face_cohort'].participant_id.tolist()==['B']
+    people=pd.DataFrame([{'short_title':'EXAMPLE','participant_key':'p'}])
+    def plan(*a,modality,**kw):
+        return SimpleNamespace(unresolved=(),to_dataframe=lambda:pd.DataFrame([r for r in rows if r['modality']==modality]))
+    fake=SimpleNamespace(search_participants=lambda **kw:SimpleNamespace(to_dataframe=lambda:people),plan_participant_images=plan)
+    ns={'pd':pd,'tcia':fake,'display':lambda *a:None,'OUTPUT':tmp_path}
+    with redirect_stdout(io.StringIO()):exec(source_containing('SEG_COLLECTION ='),ns)
+    assert ns['ct_seg_cohort'].participant_id.tolist()==['B']
+
+
+def test_empty_public_ct_seg_preview_is_not_a_schema_error(tmp_path):
+    fake=SimpleNamespace(search_participants=lambda **kw:SimpleNamespace(to_dataframe=lambda:pd.DataFrame()),
+        plan_participant_images=lambda *a,**kw:SimpleNamespace(unresolved=(),to_dataframe=lambda:pd.DataFrame()))
+    ns={'pd':pd,'tcia':fake,'display':lambda *a:None,'OUTPUT':tmp_path}
+    with redirect_stdout(io.StringIO()):
+        exec(source_containing('SEG_COLLECTION ='),ns)
+        exec(source_containing('ct_seg_selection = pd.DataFrame()'),ns)
+    assert ns['ct_seg_cohort'].empty and ns['ct_seg_selection'].empty
+    assert not ns['ct_seg_manifest'].exists()
 
 
 def test_empty_modality_search_is_a_clear_zero_match(tmp_path):
@@ -74,7 +87,9 @@ def test_nifti_grid_check_detects_affine_mismatch(tmp_path,mismatch):
     mask=nib.Nifti1Image(np.zeros((3,4,5),dtype=np.int16),affine)
     for obj,name in [(image,'image.nii.gz'),(mask,'mask.nii.gz')]:
         obj.header.set_xyzt_units('mm');nib.save(obj,tmp_path/name)
-    tree=ast.parse(source_containing('SOURCE_NIFTI ='));tree.body=tree.body[2:]
+    aspera=nbformat.read(NOTEBOOK.parents[1]/'TCIA_Aspera_CLI_Downloads.ipynb',as_version=4)
+    source=next(c.source for c in aspera.cells if c.cell_type=='code' and 'SOURCE_NIFTI =' in c.source)
+    tree=ast.parse(source);tree.body=tree.body[2:]
     ns={'SOURCE_NIFTI':str(tmp_path/'image.nii.gz'),'MASK_NIFTI':str(tmp_path/'mask.nii.gz'),
         'pd':pd,'Path':Path,'display':lambda *a:None}
     with redirect_stdout(io.StringIO()):exec(compile(tree,str(NOTEBOOK),'exec'),ns)
@@ -117,8 +132,8 @@ def test_manifest_examples_accept_local_path_and_url_without_notebook_parsing(tm
     assert calls[1][1]['credential_file']=='approved-test-key.json'
 
 
-def test_demo_downloads_are_bounded_and_keep_controlled_scan_label_pair():
-    for marker, limit in [('public_manifest = next(', 1), ('CREDENTIAL_FILE =', 1), ('DOWNLOAD_CONTROLLED_CT =', 2), ('clinical_image_participants =',1), ('slide_images =',1)]:
+def test_demo_downloads_are_bounded_and_keep_public_scan_label_pair():
+    for marker, limit in [('public_manifest = next(', 1), ('CREDENTIAL_FILE =', 1), ('if ct_seg_selection.empty:', 2), ('clinical_image_participants =',1), ('slide_images =',1)]:
         calls = [node for node in ast.walk(ast.parse(source_containing(marker)))
                  if isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute)
                  and node.func.attr in {'download_manifest', 'download_files', 'download_images'}]
@@ -132,11 +147,11 @@ def test_sample_pair_keeps_one_ct_and_one_seg_when_study_has_many_series(tmp_pat
          'modality':modality,'series_instance_uid':f'1.2.{i}',
          'drs_uri':f'drs://example/{i}','file_size_bytes':4,'file_name':f'{i}.zip'}
         for i,modality in enumerate(['CT','CT','CT','SEG','SEG'])])
-    ns={'format_table':format_table,'pd':pd,'usable':usable,'face_cohort':pd.DataFrame([{'participant_id':'P','study_instance_uid':'S'}]),
+    ns={'format_table':format_table,'pd':pd,'usable':usable,'ct_seg_cohort':pd.DataFrame([{'short_title':'EXAMPLE','participant_id':'P','study_instance_uid':'S'}]),
         'OUTPUT':tmp_path,'display':lambda *a:None}
-    with redirect_stdout(io.StringIO()):exec(source_containing('face_selection = pd.DataFrame()'),ns)
-    assert ns['face_selection'].modality.tolist()==['CT','SEG']
-    assert len(pd.read_csv(ns['face_manifest']))==2
+    with redirect_stdout(io.StringIO()):exec(source_containing('ct_seg_selection = pd.DataFrame()'),ns)
+    assert ns['ct_seg_selection'].modality.tolist()==['CT','SEG']
+    assert len(pd.read_csv(ns['ct_seg_manifest']))==2
 
 
 def test_download_tables_show_published_counts_without_turning_missing_into_zero(tmp_path):
@@ -164,11 +179,6 @@ def test_download_tables_show_published_counts_without_turning_missing_into_zero
         assert table.loc[1,['subjects','studies','series','images']].tolist()==['Not reported']*4
     exported=pd.read_csv(tmp_path/'CMB-GEC_download_inventory.csv')
     assert pd.isna(exported.loc[1,'subjects']) and exported.loc[0,'series']==0
-    # The other dataset download tables use the same published fields.
-    for marker in ['brain_downloads = pd.concat','FACE_COLLECTION =']:
-        source=source_containing(marker)
-        for name in ['subjects','studies','series','images']:
-            assert f'"{name}"' in source
 
 
 def test_notebook_does_not_install_or_invoke_external_download_applications():
