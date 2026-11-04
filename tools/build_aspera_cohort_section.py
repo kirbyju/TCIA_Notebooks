@@ -40,7 +40,7 @@ MAX_ITEMS = 2  # Files, not participants or bytes. Use None for the full selecte
 To use a cohort you selected elsewhere, enter its JSON path above. Preserve `participant_key`, `dataset_type`, `short_title`, and `display_participant_id`; a participant ID alone is ambiguous across datasets. Change `MODALITY` and `FILE_FORMATS` for your question. Those participants must have exact indexed files in an open-access Aspera package; other download routes belong in their own workflows.''')
     brain=original[1]['source']
     code('''if COHORT_JSON:
-    selected_participants = pd.read_json(COHORT_JSON)
+    selected_participants = pd.DataFrame(json.loads(Path(COHORT_JSON).read_text()))
 else:
 '''+''.join('    '+line+'\n' for line in brain.splitlines())+'''
     selected_participants = brain_cohort[

@@ -1,6 +1,7 @@
 """Validate the external-application adapter without installation or transfers."""
 import ast
 import csv
+import json
 from pathlib import Path
 from types import SimpleNamespace
 import nbformat
@@ -80,3 +81,15 @@ def test_query_notebook_defers_aspera_and_nifti_to_separate_notebook():
     assert 'list_controlled_files' not in code and 'FACE_COLLECTION' not in code
     assert 'SEG_COLLECTION = "NSCLC-Radiomics"' in code
     assert any('TCIA_Aspera_CLI_Downloads.ipynb' in c.source for c in query.cells)
+
+
+def test_saved_cohort_preserves_leading_zero_participant_ids(tmp_path):
+    import pandas as pd
+    source=tmp_path/'cohort.json'
+    source.write_text(json.dumps([{'participant_key':'key','dataset_type':'Collection',
+        'short_title':'EXAMPLE','display_participant_id':'0001'}]))
+    cell=next(c for c in nbformat.read(NOTEBOOK,as_version=4).cells
+              if c.cell_type=='code' and c.source.startswith('if COHORT_JSON:'))
+    ns={'Path':Path,'json':json,'pd':pd,'COHORT_JSON':str(source),'OUTPUT':tmp_path,'display':lambda *a:None}
+    exec(cell.source,ns)
+    assert ns['selected_participants'].display_participant_id.tolist()==['0001']
