@@ -8,14 +8,14 @@ across CMB-LCA and NSCLC-Radiomics (with CMB-GEC as a site-filter comparison), p
 candidate selection. It explains public versus controlled access and DICOM versus
 other formats without requiring knowledge of the hosting infrastructure.
 
-The workshop installs tcia_utils 4.0.0a15 for Python 3.11+. In Colab, run the setup
+The workshop installs tcia_utils 4.0.0a16 for Python 3.11+. In Colab, run the setup
 cell and restart the runtime when prompted. The hosted REST service must include
 query API 0.7.1+ with combined participant clinical filters, the shared participant
 image-planning route, public slide descriptors and list-valued attributes.
 This requires a source update and REST/MCP restart; no bundle rebuild is needed.
 
 All supported image/file transfers now delegate to the pip-installed
-`tcia-data-retriever==0.1.0rc2`. It bundles the headless transfer executable;
+`tcia-data-retriever==0.1.0rc3`. It bundles the headless transfer executable;
 readers do not install Go, Node, a desktop application or another executable.
 The `downloads` extra installs it. Participant image planning uses the same TCIA
 service interface for public DICOM series and public non-DICOM files. The service
@@ -32,8 +32,8 @@ examples remain off until an approved reader supplies their own key and enables
 them. To expand a sample, keep the same destination and omit max_items; the
 transfer package can reuse existing files without resume=True. That option
 explicitly requests skip-existing checks, not partial-file byte-range resume.
-In RC2, reused direct/controlled files are counted under Downloaded; Synced is
-specific to the public DICOM sync route. TDR RC2 streams plain progress lines into notebook output,
+In RC3, verified existing files count as Skipped and completed. Synced identifies
+public DICOM sync jobs, which may transfer missing files. TDR streams plain progress lines into notebook output,
 even if SDK preparation messages are disabled.
 
 Supplied CLI/Python controlled keys are used for that invocation only, without a
@@ -69,7 +69,7 @@ flags and metadata snapshot remain with outputs.
 
 The fixture contains actual public metadata responses from the deployed 0.7.1
 API, recorded on 2026-11-03. The complete notebook passed against that deployment
-using the built 4.0.0a15 wheel with all imaging transfers blocked. The default
+using the built 4.0.0a16 wheel with all imaging transfers blocked. The default
 combined search returned 322 records across CMB-LCA and NSCLC-Radiomics;
 recorded-only diagnosis/site evidence returned 5 CMB-LCA records.
 
@@ -90,3 +90,7 @@ label; only exact manifest byte counts are used as payload-size assertions. SDK
 a15 also avoids asserting ambiguous controlled-inventory sizes when exact payload
 metadata is absent. Available checksum and response-length checks remain enabled.
 The metadata CSV is written during preparation and does not prove transfer success.
+
+This notebook uses the RC3 candidate containing the TDR PR #13 counter change.
+The TDR review remains open; this package preview supports testing before the
+team completes formal review. No new download option is required.

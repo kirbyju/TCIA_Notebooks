@@ -36,7 +36,7 @@ Run the next cell to install the packages used in this lab. In Colab, run the no
 
 code(r'''import subprocess, sys
 subprocess.check_call(
-    [sys.executable, "-m", "pip", "install", "tcia_utils[tables,downloads]==4.0.0a15", "nibabel>=5,<6"]
+    [sys.executable, "-m", "pip", "install", "tcia_utils[tables,downloads]==4.0.0a16", "nibabel>=5,<6"]
 )''', tags=['installation'])
 
 code(r'''from pathlib import Path
@@ -57,7 +57,7 @@ from tcia_utils import TCIAClient, DownloadError
 assert hasattr(tcia_utils, "format_table") and all(
     hasattr(TCIAClient, method)
     for method in ("download_manifest", "plan_participant_images", "download_images")
-) and "primary_site" in inspect.signature(TCIAClient.search_participants).parameters and "accept_data_policy" in inspect.signature(TCIAClient.download_manifest).parameters, "Run the installation cell for tcia_utils 4.0.0a15, restart your Python/Colab runtime, then run from the top."
+) and "primary_site" in inspect.signature(TCIAClient.search_participants).parameters and "accept_data_policy" in inspect.signature(TCIAClient.download_manifest).parameters, "Run the installation cell for tcia_utils 4.0.0a16, restart your Python/Colab runtime, then run from the top."
 format_table = tcia_utils.format_table
 pd.set_option("display.max_colwidth", 85)
 OUTPUT = Path(os.environ.get("TCIA_EXAMPLE_OUTPUT_DIR", "tcia-workshop-files"))
@@ -267,7 +267,7 @@ Leave the next cell unchanged to continue without a controlled download. An appr
 
 These downloads may be ZIP archives with their original filenames. A standalone manifest call uses the generic folder label `manifest`, so its layout can differ from the public DICOM folders above. This file-download route leaves ZIPs as archives; it does not automatically unpack them into the same DICOM hierarchy.
 
-After inspecting the sample, keep the same destination and remove `max_items=1` for the full manifest. Existing-file checks use the supplied size/checksum when available. In the current transfer-package version, already-present controlled files are still counted under `Downloaded`, rather than `Synced`. **A zero `Synced` count does not mean all files were transferred again.**''')
+After inspecting the sample, keep the same destination and remove `max_items=1` for the full manifest. Existing-file checks use the supplied size/checksum when available. Files that pass the existing-file checks are counted as `Skipped` and still count toward completed progress. `Downloaded` counts new file transfers. `Synced` is used for the public DICOM synchronization jobs described above; controlled-file reuse does not need that category.''')
 
 code(r'''CREDENTIAL_FILE = ""  # Path to your own approved JSON key file; never the key value.
 DOWNLOAD_CONTROLLED_CMB = False
@@ -904,7 +904,7 @@ Useful links: [TCIA Dataset Explorer](https://www.cancerimagingarchive.net/datas
 notebook = nbf.v4.new_notebook(cells=cells, metadata={
     "kernelspec": {"display_name":"Python 3", "language":"python", "name":"python3"},
     "language_info": {"name":"python", "version":"3.11"},
-    "tcia_workshop": {"package_version":"4.0.0a15", "default_mode":"live_public_samples",
+    "tcia_workshop": {"package_version":"4.0.0a16", "default_mode":"live_public_samples",
         "payload_downloads_default":True, "public_sample_max_items":1,
         "controlled_downloads_default":False, "audience":"junior data scientists"}})
 for i, cell in enumerate(notebook.cells): cell.id = f"tcia-workshop-{i:02d}"
