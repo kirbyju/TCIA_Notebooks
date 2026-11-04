@@ -87,23 +87,21 @@ print('RECORDED PUBLIC METADATA - not a live query' if _mode == 'fixture' else '
 
 POSTLUDE = r'''
 assert not INSTALL_FROM_PYPI
-assert not DOWNLOAD_CONTROLLED_CMB and not DOWNLOAD_CONTROLLED_CT
-assert report.scope['dry_run'] and report.scope['sample_selected_items'] == 1
+assert not DOWNLOAD_CONTROLLED_CMB
+assert report.scope['dry_run'] and report.scope['sample_selected_items'] == 2
 assert not report.scope['data_policy_accepted']
 assert all(entry['status'] == 'planned' for entry in report.entries)
-assert not SOURCE_NIFTI and not MASK_NIFTI
-assert len(cohort) > 0 and len(brain_cohort) > 0 and len(face_selection) > 0
+assert len(cohort) > 0 and len(ct_seg_selection) == 2
 assert cohort['short_title'].nunique() >= 2, 'Default cohort must actually span datasets.'
 assert cohort.primary_diagnosis.str.contains(DIAGNOSIS_TEXT, case=False, regex=False, na=False).all()
 assert cohort.primary_site.str.contains(PRIMARY_SITE_TEXT, case=False, regex=False, na=False).all()
-assert {'CT', 'SEG'}.issubset(set(face_selection['modality']))
-assert set(face_selection['access_level']) == {'controlled'}
+assert {'CT', 'SEG'}.issubset(set(ct_seg_selection['modality']))
+assert set(ct_seg_selection['access_level']) == {'open'}
 assert len(download_plan) == len(python_groups) + len(external_groups)
 assert len(external_groups) > 0, 'Reassess the original-package example if current routing has changed.'
-assert set(pd.read_csv(face_manifest).columns) == {'drs_uri'}
-assert len(pd.read_csv(face_manifest)) == face_selection['drs_uri'].nunique()
+assert set(pd.read_csv(ct_seg_manifest).columns) == {'SeriesInstanceUID'}
+assert len(pd.read_csv(ct_seg_manifest)) == ct_seg_selection['series_instance_uid'].nunique()
 assert participant_assets.shape[0] > 0 and len(example_facts) > 0
-assert len(brain_files) > 0
 assert len(ct_images.rows) > 0 and len(slide_images.rows) > 0
 assert not ct_images.unresolved and not slide_images.unresolved
 assert {r['participant_id'] for r in ct_images.rows}.issubset(set(clinical_image_participants.display_participant_id))
@@ -121,9 +119,7 @@ _report = {'fingerprint': SNAPSHOT, 'dataset_groups': len(download_plan),
     'clinical_filters': {'diagnosis_text':DIAGNOSIS_TEXT,'primary_site_text':PRIMARY_SITE_TEXT,
                          'include_inferred':INCLUDE_INFERRED_CLINICAL},
     'resolved_clinical_values': len(clinical_summary), 'example_clinical_facts': len(example_facts),
-    'brain_participant_records': int(brain_cohort['participant_key'].nunique()),
-    'brain_segmentation_files': len(brain_cohort), 'brain_example_files': len(brain_files),
-    'controlled_ct_seg_studies': len(face_cohort), 'controlled_selected_files': len(face_selection),
+    'public_ct_seg_studies': len(ct_seg_cohort), 'public_selected_series': len(ct_seg_selection),
     'unique_http_requests': len(_seen_requests), 'payload_transfers': 0,
     'clinical_ct_series':len(ct_images.rows),'clinical_slide_files':len(slide_images.rows),
     'clinical_ct_index_version':ct_images.providers['IDC']['idc_version'],
@@ -138,8 +134,8 @@ def prepare_sample_dry_runs(notebook):
     """Exercise the public sample calls without payloads in the QA-only copy."""
     samples = [cell for cell in notebook.cells
                if 'sample-download' in cell.metadata.get('tags', [])]
-    if len(samples) != 3:
-        raise RuntimeError('Expected three tagged public sample download cells')
+    if len(samples) != 4:
+        raise RuntimeError('Expected four tagged public sample download cells')
     for cell in samples:
         tree = ast.parse(cell.source)
         calls = [node for node in ast.walk(tree)
@@ -149,8 +145,9 @@ def prepare_sample_dry_runs(notebook):
             raise RuntimeError('Expected one download call in each public sample cell')
         call = calls[0]
         limits = [kw.value for kw in call.keywords if kw.arg == 'max_items']
-        if len(limits) != 1 or not isinstance(limits[0], ast.Constant) or limits[0].value != 1:
-            raise RuntimeError('Public samples must explicitly select max_items=1')
+        expected = 2 if 'ct_seg_manifest' in cell.source else 1
+        if len(limits) != 1 or not isinstance(limits[0], ast.Constant) or limits[0].value != expected:
+            raise RuntimeError(f'Public samples must explicitly select max_items={expected}')
         if any(kw.arg == 'dry_run' for kw in call.keywords):
             raise RuntimeError('Reader samples should perform real downloads')
         policy = next((kw for kw in call.keywords if kw.arg == 'accept_data_policy'), None)

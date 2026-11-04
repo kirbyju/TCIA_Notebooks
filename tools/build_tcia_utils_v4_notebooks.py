@@ -13,14 +13,13 @@ md(r'''[![Open In Colab](https://colab.research.google.com/assets/colab-badge.sv
 
 In this hands-on lab we'll start with a dataset, then work our way down to individual participants. Along the way we'll find images, clinical information, and segmentation labels. You only need a little Python and some familiarity with pandas tables.
 
-We'll work through four questions:
+We'll work through three questions:
 
 1. **Which datasets have the data I need, and how do I download a whole dataset?**
 2. **Can I find participants with an image modality, diagnosis, and primary disease site across datasets?**
-3. **Where can I find public brain MR images with segmentation masks?**
-4. **How do I prepare a controlled-access CT cohort with segmentations?**
+3. **Which open-access CT images also have segmentation labels?**
 
-Our main example is [CMB-GEC](https://www.cancerimagingarchive.net/collection/cmb-gec/), which includes radiology images, tissue-slide images, and links to clinical information. Later we'll look at brain MR and head-and-neck CT.
+Our main example is [CMB-GEC](https://www.cancerimagingarchive.net/collection/cmb-gec/), which includes radiology images, tissue-slide images, and links to clinical information. Later we'll select public CT scans and segmentation labels.
 
 Use Python **3.11 or newer**. The installation cell sets up the packages used in this lab. This notebook is self-contained: you do not need other files from the repository.
 
@@ -32,11 +31,11 @@ md(r'''## Let's get set up
 
 Run the next cell to install the packages used in this lab. In Colab, run the notebook from the top. In Jupyter, use a fresh Python 3.11+ environment. Restart the Python session if prompted after installation.
 
-`pandas` helps us work with tables, and `nibabel` is used by the optional NIfTI header check. Download support is included, but querying the metadata does not download any images.''')
+`pandas` helps us work with tables. Download support is included, but querying the metadata does not download any images.''')
 
 code(r'''import subprocess, sys
 subprocess.check_call(
-    [sys.executable, "-m", "pip", "install", "tcia_utils[tables,downloads]==4.0.0a16", "nibabel>=5,<6"]
+    [sys.executable, "-m", "pip", "install", "tcia_utils[tables,downloads]==4.0.0a17"]
 )''', tags=['installation'])
 
 code(r'''from pathlib import Path
@@ -57,7 +56,7 @@ from tcia_utils import TCIAClient, DownloadError
 assert hasattr(tcia_utils, "format_table") and all(
     hasattr(TCIAClient, method)
     for method in ("download_manifest", "plan_participant_images", "download_images")
-) and "primary_site" in inspect.signature(TCIAClient.search_participants).parameters and "accept_data_policy" in inspect.signature(TCIAClient.download_manifest).parameters, "Run the installation cell for tcia_utils 4.0.0a16, restart your Python/Colab runtime, then run from the top."
+) and "primary_site" in inspect.signature(TCIAClient.search_participants).parameters and "accept_data_policy" in inspect.signature(TCIAClient.download_manifest).parameters, "Run the installation cell for tcia_utils 4.0.0a17, restart your Python/Colab runtime, then run from the top."
 format_table = tcia_utils.format_table
 pd.set_option("display.max_colwidth", 85)
 OUTPUT = Path(os.environ.get("TCIA_EXAMPLE_OUTPUT_DIR", "tcia-workshop-files"))
@@ -238,11 +237,11 @@ Before a large download, let's **try one item**. Passing `max_items=1` downloads
 
 Run the next cell to download one DICOM series into a sample folder. The report shows how many items were selected and how many were available. These are the first items in the supplied order, so they may not represent every kind of data in the collection.
 
-After checking the sample, **keep the same destination and remove `max_items=1`** to request the full manifest. The transfer package can reuse the series already present; you do not need `resume=True` just to expand the sample. Choose a separate folder only if you want a separate copy.
+After checking the sample, **keep the same destination and remove `max_items=1`** to request the full manifest. The transfer package can reuse the series already present; it checks and reuses those files automatically. Choose a separate folder only if you want a separate copy.
 
 We choose `OUTPUT / "samples"` as the download root. The folder name is our choice: we can keep using it for the full download. Public DICOM images are organized underneath it by collection, participant, study, and series. We do not need to add those details to the destination ourselves. Small transfer lists and transfer metadata may appear alongside the collection folders.
 
-`Synced` in the public DICOM summary identifies existing-series sync jobs; those jobs can still fetch missing files. The optional `resume=True` requests skip-existing checks explicitly. It does not promise to resume an incomplete file at the exact byte where a connection stopped. A successful sample does not establish that every remaining item is available or that an image and segmentation match.''')
+`Synced` in the public DICOM summary identifies existing-series sync jobs; those jobs can still fetch missing files. To retry a download, rerun the same call with the same destination. An incomplete file may need to be transferred again. A successful sample does not establish that every remaining item is available or that an image and segmentation match.''')
 
 code(r'''public_manifest = next(
     item for item in saved_manifests if item["route_column"] == "SeriesInstanceUID"
@@ -555,298 +554,90 @@ elif slide_images.rows:
 else:
     print("No matching public slides were found.")''', tags=['sample-download'])
 
-md(r'''## 3. Where are the public brain MR images with segmentation masks?
+md(r'''## 3. Which open-access CT images have segmentation labels?
 
-A **segmentation** labels parts of an image, such as a tumor. The label image is useful for training or evaluating a model, but we also need the source image and an understanding of how the two line up.
+Let's finish with [NSCLC-Radiomics](https://www.cancerimagingarchive.net/collection/nsclc-radiomics/). We'll look for public CT scans and DICOM **SEG** segmentation images for the same participant and study. These downloads do not require a controlled-access account or key.
 
-We'll search [UCSF-PDGM](https://www.cancerimagingarchive.net/collection/ucsf-pdgm/) and [UPENN-GBM](https://www.cancerimagingarchive.net/collection/upenn-gbm/). These provide public brain MR data in **NIfTI**, a common volume format with filenames ending in `.nii` or `.nii.gz`.
+A segmentation labels regions in an image, such as a tumor. Finding CT and SEG in the same study gives us a useful starting point. It does not prove which CT series the SEG references. Check those DICOM references and the segment names before using the pair in an analysis.''')
 
-First find participants with public NIfTI MR data. Then look for indexed segmentation files and join them within each collection. We deliberately keep participants with unchecked geometry so “not checked” is not confused with “bad image.”''')
-
-code(r'''BRAIN_COLLECTIONS = ["UCSF-PDGM", "UPENN-GBM"]
-brain_candidates = tcia.search_participants(
-    short_titles=BRAIN_COLLECTIONS,
-    dataset_type="collection",
-    modalities=["MR"],
-    access_levels=["open"],
-    file_formats=["NIFTI"],
-    limit=500,
-).to_dataframe(all_pages=True)
-brain_masks = tcia.search_public_assets(
-    short_titles=BRAIN_COLLECTIONS,
-    modalities=["MR"],
-    file_formats=["NIFTI"],
-    object_roles=["segmentation"],
-    requires_annotations=True,
-    limit=500,
-).to_dataframe(all_pages=True)
-if brain_candidates.empty:
-    brain_candidates = pd.DataFrame(
-        columns=["short_title", "display_participant_id", "participant_key"]
-    )
-if brain_masks.empty:
-    brain_masks = pd.DataFrame(
-        columns=["short_title", "subject_id", "asset_id", "file_name", "geometry_status"]
-    )
-linked_masks = brain_masks.drop(
-    columns=["participant_key", "display_participant_id"], errors="ignore"
-).merge(
-    brain_candidates[["short_title", "display_participant_id", "participant_key"]],
-    left_on=["short_title", "subject_id"],
-    right_on=["short_title", "display_participant_id"],
-    how="left",
-    validate="many_to_one",
-    indicator="participant_link",
+code(r'''SEG_COLLECTION = "NSCLC-Radiomics"
+seg_candidates = tcia.search_participants(
+    short_titles=[SEG_COLLECTION], dataset_type="collection",
+    modalities=["SEG"], file_formats=["DICOM"], access_levels=["open"], limit=5,
+).to_dataframe()
+print("Candidate participants on this page:", len(seg_candidates))
+# Start with two participants so we can inspect the results. This is a preview,
+# not a count of everyone in the collection.
+seg_participants = seg_candidates.head(2).copy()
+public_ct_images = tcia.plan_participant_images(
+    seg_participants, modality="CT", file_format="DICOM"
 )
-brain_cohort = linked_masks[linked_masks["participant_link"] == "both"].copy()
-print("Public MR participant records:", len(brain_candidates))
-print("Indexed segmentation files:", len(brain_masks))
-print(
-    "Segmentation files without an exact inventory ID match:",
-    linked_masks["participant_link"].eq("left_only").sum(),
+public_seg_images = tcia.plan_participant_images(
+    seg_participants, modality="SEG", file_format="DICOM"
 )
-display(
-    brain_cohort.groupby("short_title").agg(
-        participant_records=("participant_key", "nunique"),
-        segmentation_files=("asset_id", "nunique"),
-    )
+if public_ct_images.unresolved or public_seg_images.unresolved:
+    raise RuntimeError("Some participant image routes are unresolved; inspect the plans before downloading.")
+ct_seg_files = pd.concat(
+    [public_ct_images.to_dataframe(), public_seg_images.to_dataframe()], ignore_index=True
 )
-display(brain_cohort[["short_title", "subject_id", "file_name", "geometry_status"]].head(10))
-brain_cohort.to_json(OUTPUT / "brain_mr_segmentation_inventory.json", orient="records", indent=2)''')
-
-md(r'''This tells us that a participant has both public MR data and segmentation files. Some masks label brain tissue and others label tumor regions; check the file descriptions for the labels you need. This table does **not** establish which individual MR volume each mask annotates. Use the dataset's file descriptions and naming documentation to select the corresponding source image.
-
-Also, participant IDs do not always equal unique people. The UCSF-PDGM description explains that some original IDs were later recognized as follow-up scans of the same person. Use the collection's documented relationships when splitting training and test data; don't split related scans between them just because their filenames differ.
-
-### What does the geometry information tell us?
-
-Geometry describes the image grid: dimensions, voxel spacing, and orientation. `checked_grid_geometry` means a grid assessment was recorded. It does not prove that a mask matches a source image or that either is suitable for your model. `not_checked` means we don't have an assessment here.
-
-Let's inspect one participant's source-image and segmentation records, including any detailed geometry information the service exposes.''')
-
-code(r'''brain_files = pd.DataFrame()
-if len(brain_cohort):
-    brain_example = brain_cohort.sort_values(["short_title", "subject_id", "file_name"]).iloc[0]
-    brain_files = tcia.search_public_assets(
-        short_titles=[brain_example["short_title"]],
-        participant_id=brain_example["subject_id"],
-        file_formats=["NIFTI"],
-        limit=500,
-    ).to_dataframe(all_pages=True)
-    display(
-        brain_files.reindex(
-            columns=[
-                "subject_id",
-                "file_name",
-                "object_role",
-                "geometry_status",
-                "geometry_assessment_method",
-                "geometry_assessed_at_utc",
-                "geometry_details_json",
-            ]
-        )
-    )
-    detailed = (
-        brain_files["geometry_details_json"]
-        .apply(lambda value: isinstance(value, dict) and bool(value))
-        .sum()
-    )
-    print("Files with populated geometry details:", detailed, "of", len(brain_files))
-    if not detailed:
-        print(
-            "This snapshot provides assessment status, but no dimensions, spacing, or affine values for these files."
-        )
-    brain_files.to_json(OUTPUT / "brain_example_files.json", orient="records", indent=2)
-else:
-    print("No indexed masks matched these filters in this snapshot.")''')
-
-md(r'''To obtain these NIfTI files, choose the published package for the collection. The table below includes its download category, link, license, and size. For groups marked `python_supported`, pass their `download_id` to `tcia.download_dataset()`. For other groups, follow the official download link; this package does not install or invoke a separate application.
-
-An indexed path inside an archive is not a standalone download URL. A Python-supported route retrieves the published files; it does not invent per-file links. Groups requiring a separate application stay outside this download demo. Extract the files and choose a documented matching image/mask pair before using the optional header check below.''')
-
-code(r'''brain_downloads = pd.concat(
-    [tcia.plan_downloads(title).to_dataframe() for title in BRAIN_COLLECTIONS],
-    ignore_index=True,
-)
-display(
-    format_table(
-        brain_downloads,
-        columns=[
-            "short_title",
-            "download_title",
-            "download_category",
-            "download_requirements",
-            "download_method",
-            "python_supported",
-            "subjects",
-            "studies",
-            "series",
-            "images",
-            "file_types",
-            "license_label",
-            "download_size",
-            "download_size_unit",
-            "download_url",
-        ]
-    )
-)
-brain_downloads.to_csv(OUTPUT / "brain_dataset_downloads.csv", index=False)''')
-
-md(r'''Once the files are on your computer, this optional check reads their NIfTI headers. Set the two paths to a **documented matching pair**. We'll compare grid shape, voxel sizes, orientation, and the affine matrix (which places the grid in physical space). A matching grid is a useful first check, not a replacement for visually checking the overlay or verifying label meanings from the dataset documentation.''')
-
-code(r'''SOURCE_NIFTI = ""  # A downloaded source image, for example /path/to/image.nii.gz
-MASK_NIFTI = ""  # Its documented matching mask.
-
-if SOURCE_NIFTI and MASK_NIFTI:
-    import nibabel as nib
-    import numpy as np
-
-    image, mask = nib.load(SOURCE_NIFTI), nib.load(MASK_NIFTI)
-    display(
-        pd.DataFrame(
-            [
-                {
-                    "file": Path(path).name,
-                    "shape": obj.shape,
-                    "voxel_sizes": obj.header.get_zooms(),
-                    "spatial_units": obj.header.get_xyzt_units()[0],
-                    "orientation": nib.aff2axcodes(obj.affine),
-                }
-                for path, obj in [(SOURCE_NIFTI, image), (MASK_NIFTI, mask)]
-            ]
-        )
-    )
-    same_grid = (
-        image.shape[:3] == mask.shape[:3]
-        and image.header.get_xyzt_units()[0] != "unknown"
-        and image.header.get_xyzt_units()[0] == mask.header.get_xyzt_units()[0]
-        and np.allclose(image.affine, mask.affine, atol=1e-5)
-    )
-    print("Same spatial grid:", same_grid)
-    print("Image affine:\n", image.affine)
-    print("Mask affine:\n", mask.affine)
-else:
-    print(
-        "Optional local-file check skipped. Fill in both paths after downloading a matching pair."
-    )''', tags=['optional-local-files'])
-
-md(r'''## 4. Which controlled CT images have segmentation labels?
-
-We'll finish with [HEAD-NECK-RADIOMICS-HN1](https://www.cancerimagingarchive.net/collection/head-neck-radiomics-hn1/). Its Data Access section warns that the images could be used to reconstruct a human face. The imaging download is **controlled access**, as indicated by its license metadata. The collection also has public supporting files, so don't assume every row has the same access rule.
-
-Review the [current access policy](https://www.cancerimagingarchive.net/nih-controlled-data-access-policy/) before attempting a download. The policy identifies **phs004225** for this group of facial-image datasets. Public file metadata is available without approval; retrieving the images requires the appropriate authorization and your own JSON key.
-
-The labels here include DICOM **SEG** (segmentation images) and **RTSTRUCT** (radiotherapy contours). We'll require **CT and SEG for the same participant and study**. Contours can also be useful labels, but they are not automatically voxel masks.''')
-
-code(r'''FACE_COLLECTION = "HEAD-NECK-RADIOMICS-HN1"
-face_downloads = tcia.plan_downloads(FACE_COLLECTION).to_dataframe()
-display(
-    format_table(
-        face_downloads,
-        columns=[
-            "download_id",
-            "download_title",
-            "download_category",
-            "download_requirements",
-            "download_method",
-            "python_supported",
-            "subjects",
-            "studies",
-            "series",
-            "images",
-            "access_level",
-            "data_types",
-            "license_label",
-            "download_url",
-        ]
-    )
-)
-face_result = tcia.list_controlled_files(FACE_COLLECTION, limit=500)
-if face_result.data["count"] == face_result.data["limit"]:
-    raise RuntimeError(
-        "File inventory reached the API cap. Narrow the query before building a cohort."
-    )
-face_files = pd.DataFrame(face_result.data["files"])
-face_files["participant_id"] = face_files["participant_id"].fillna("")
-face_files["study_instance_uid"] = face_files["study_instance_uid"].fillna("")
-usable = face_files[(face_files["participant_id"] != "") & (face_files["study_instance_uid"] != "")]
-modalities_by_study = usable.groupby(["short_title", "participant_id", "study_instance_uid"])[
-    "modality"
-].agg(set)
+if ct_seg_files.empty:
+    ct_seg_files = pd.DataFrame(columns=[
+        "short_title", "participant_id", "study_instance_uid", "series_instance_uid", "modality",
+    ])
+usable = ct_seg_files.dropna(subset=["participant_id", "study_instance_uid"]).copy()
+modalities_by_study = usable.groupby(
+    ["short_title", "participant_id", "study_instance_uid"]
+)["modality"].agg(set)
 matching_studies = modalities_by_study[
     modalities_by_study.apply(lambda values: {"CT", "SEG"}.issubset(values))
 ]
-face_cohort = matching_studies.reset_index(name="available_modalities")
-print("Public file metadata returned:", len(face_files), "(route cap: 500)")
-print("Participant-study pairs with CT and SEG:", len(face_cohort))
-display(face_cohort.head(10))
-face_cohort.to_json(OUTPUT / "controlled_ct_seg_cohort.json", orient="records", indent=2)''')
+ct_seg_cohort = matching_studies.reset_index(name="available_modalities")
+display(ct_seg_cohort)
+ct_seg_cohort.to_json(OUTPUT / "public_ct_seg_cohort.json", orient="records", indent=2)''')
 
-md(r'''CT and SEG appearing in the same study is stronger evidence than a collection-level “has segmentations” label. It still does not verify the exact referenced CT series or the segment names inside a SEG object. After an authorized download, check those DICOM references and labels before using the pair for training.
+md(r'''Choose one participant-study pair, then keep one CT series and one SEG series from it. The manifest below is a small CSV listing those exact series identifiers. It is separate from the full-dataset manifest we used earlier.
 
-Let's prepare a **one-participant example** with one candidate CT file and one candidate SEG file from the same study. We choose one of each modality before applying the two-file limit, so two CT files cannot crowd out the segmentation. The exact image/label references still need checking after download. We'll write the CT and SEG file identifiers already provided by the official metadata. The manifest will contain just one `drs_uri` column, which `download_manifest()` accepts. We'll save the fuller metadata separately so we can trace every selected file.
+For collections with multiple CT or SEG series in one study, inspect the descriptions and references rather than assuming the first pair is the right one for your question.''')
 
-Size needs a little care here. A reported DICOM-series size can describe the **uncompressed images**, while the file we download is a **ZIP archive**. The two sizes can differ a lot. `download_size_label` shows the archive-size label from the published manifest; it can be rounded. `download_size_bytes` is filled only when an exact byte count is available. A blank is unknown, not zero. The package uses exact download sizes and available checksums for transfer checks; it does not treat a series size or rounded estimate as an exact ZIP size.''')
-
-code(r'''face_selection = pd.DataFrame()
-face_manifest = None
-if len(face_cohort):
-    selected_study = face_cohort.sort_values(["participant_id", "study_instance_uid"]).iloc[0]
-    face_selection = usable[
-        usable["participant_id"].eq(selected_study["participant_id"])
-        & usable["study_instance_uid"].eq(selected_study["study_instance_uid"])
-        & usable["modality"].isin(["CT", "SEG"])
-    ].copy()
-    if face_selection["drs_uri"].isna().any() or face_selection["drs_uri"].eq("").any():
-        raise ValueError("A selected file has no download identifier; no partial manifest written.")
-    # Keep one candidate CT file and one candidate SEG file from this study.
-    face_selection = face_selection.sort_values(
-        ["modality", "series_instance_uid", "drs_uri"]
-    ).drop_duplicates("modality").copy()
-    face_manifest = OUTPUT / "controlled_ct_and_seg.csv"
-    face_selection[["drs_uri"]].drop_duplicates().to_csv(face_manifest, index=False)
-    face_selection.to_json(
-        OUTPUT / "controlled_ct_and_seg_evidence.json", orient="records", indent=2
-    )
-    display(
-        format_table(
-            face_selection,
-            columns=["participant_id", "modality", "series_instance_uid", "file_name",
-                     "file_size_bytes", "file_size_basis", "download_size_label", "download_size_bytes"],
-        )
-    )
-    print("Manifest:", face_manifest.name)
-    print("Selected files:", face_selection["drs_uri"].nunique())
-    exact_sizes = pd.to_numeric(
-        face_selection.reindex(columns=["download_size_bytes"])["download_size_bytes"],
-        errors="coerce",
-    )
-    print("Files with exact download byte counts:", exact_sizes.notna().sum(), "of", len(face_selection))
+code(r'''ct_seg_selection = pd.DataFrame()
+ct_seg_manifest = OUTPUT / "public_ct_seg_sample.csv"
+if len(ct_seg_cohort):
+    chosen = ct_seg_cohort.sort_values(["participant_id", "study_instance_uid"]).iloc[0]
+    ct_seg_selection = usable[
+        usable["short_title"].eq(chosen["short_title"])
+        & usable["participant_id"].eq(chosen["participant_id"])
+        & usable["study_instance_uid"].eq(chosen["study_instance_uid"])
+    ].sort_values(["modality", "series_instance_uid"]).groupby("modality").head(1)
+    ct_seg_selection[["series_instance_uid"]].rename(
+        columns={"series_instance_uid": "SeriesInstanceUID"}
+    ).to_csv(ct_seg_manifest, index=False)
+    display(ct_seg_selection.reindex(columns=[
+        "short_title", "participant_id", "study_instance_uid", "series_instance_uid",
+        "modality", "instance_count", "size_bytes", "license_label",
+    ]))
+    print("Selected CT/SEG series:", len(ct_seg_selection))
 else:
-    print("No participant-study pair satisfied CT + SEG in this snapshot.")''')
+    print("No same-study CT/SEG pair matched this preview. Try another participant page.")''')
 
-md(r'''An approved user can use `tcia.download_files()` to retrieve exactly the selected CT/SEG files. Here we keep both files with `max_items=2`, so the demo includes the selected scan and segmentation rather than cutting the pair in half. It does not add other scans or labels. Approval must cover **this** study as well.
+md(r'''Now download this small selection. Here `max_items=2` means **two series**, so it keeps both the scan and the segmentation. It does not limit the number of DICOM images or the number of bytes. As before, rerunning the same call with the same destination lets Data Retriever check and reuse files already present.''')
 
-Keep `DOWNLOAD_CONTROLLED_CT = False` unless you're ready to retrieve the subset with your own key. To obtain the full imaging dataset instead, use `download_dataset()` with its imaging download ID from the table above. The small manifest we created is only our selected subset.''')
+code(r'''if ct_seg_selection.empty:
+    raise ValueError("No eligible public CT/SEG sample was selected.")
+report = tcia.download_manifest(
+    ct_seg_manifest, OUTPUT / "public-ct-seg",
+    accept_data_policy=True, max_items=2,
+)
+display(report.to_dataframe())''', tags=['sample-download'])
 
-code(r'''DOWNLOAD_CONTROLLED_CT = False
-if DOWNLOAD_CONTROLLED_CT:
-    if face_selection.empty:
-        raise ValueError("No eligible CT/SEG subset was selected.")
-    report = tcia.download_files(
-        face_selection,
-        OUTPUT / FACE_COLLECTION / "selected-ct-seg",
-        credential_file=CREDENTIAL_FILE,
-        accept_data_policy=True,
-        max_items=2,
-    )
-    display(report.to_dataframe())
-else:
-    print("Controlled CT/SEG download is off. The selected manifest is ready for an approved user.")''', tags=['optional-download'])
+md(r'''### What about NIfTI files delivered through Aspera?
+
+The [Aspera download notebook](https://colab.research.google.com/github/kirbyju/TCIA_Notebooks/blob/main/TCIA_Aspera_CLI_Downloads.ipynb) shows how to find a brain MR cohort with NIfTI segmentations, export the participants' exact file paths with `tcia_utils`, and download a small sample. It also accepts a saved participant cohort from another notebook, such as our `modality_diagnosis_site_cohort.json` file, when those participants have indexed Aspera files.
+
+That notebook includes the separate Aspera installation and an optional image/mask geometry check.''')
 
 md(r'''## Keep a record of what you used
 
-We've gone from collection discovery to whole-dataset download planning, then built participant cohorts using modality, diagnosis, and segmentation availability. The saved tables include all search pages, while some displayed tables are deliberately short previews. The controlled-file and clinical-fact routes have explicit limits; they are not exhaustive archive-wide queries.
+We've gone from collection discovery to whole-dataset download planning, then built participant cohorts using modality, diagnosis, and segmentation availability. The saved tables include all search pages, while some displayed tables are deliberately short previews. The candidate and clinical-fact previews have explicit limits; they are not exhaustive archive-wide queries.
 
 Before using a cohort in a study, review its source links, missing clinical values, inferred diagnoses, exact image/label relationships, and applicable licenses. Keep the dataset citations and split related scans at the person level when the dataset documents those relationships.
 
@@ -872,18 +663,15 @@ code(r'''run_record = {
     "external_download_ids": external_groups["download_id"].tolist(),
     "search_match_records": len(participants),
     "matching_records": len(cohort),
-    "brain_collections": BRAIN_COLLECTIONS,
-    "brain_segmentation_files": len(brain_cohort),
-    "controlled_collection": FACE_COLLECTION,
-    "controlled_selected_files": len(face_selection),
+    "public_seg_collection": SEG_COLLECTION,
+    "public_ct_seg_studies": len(ct_seg_cohort),
+    "public_ct_seg_selected_series": len(ct_seg_selection),
     "scope": "Dataset-scoped records; no cross-dataset person deduplication.",
     "clinical_caveat": "Derived clinical curation; original dataset descriptions and source clinical files remain authoritative.",
     "payload_completion_verified": False,
     "source_pages": [
         collection["tcia_page"],
-        "https://www.cancerimagingarchive.net/collection/ucsf-pdgm/",
-        "https://www.cancerimagingarchive.net/collection/upenn-gbm/",
-        "https://www.cancerimagingarchive.net/collection/head-neck-radiomics-hn1/",
+        "https://www.cancerimagingarchive.net/collection/nsclc-radiomics/",
         "https://www.cancerimagingarchive.net/nih-controlled-data-access-policy/",
     ],
 }
@@ -895,16 +683,16 @@ md(r'''### Try your own question
 
 Change `COHORT_COLLECTIONS`, `COHORT_MODALITY`, `DIAGNOSIS_TEXT`, and `PRIMARY_SITE_TEXT`, then rerun section 2 onward. Start with a small set of collections so you can inspect their clinical labels and coverage before widening the search.
 
-For another challenge, change `BRAIN_COLLECTIONS` and compare how many participants have segmentation files with checked versus unchecked geometry. Keep both categories visible until you've decided what your project actually requires.
+For another challenge, use the Aspera notebook to explore NIfTI image and mask geometry for a selected participant cohort.
 
 For advanced public DICOM metadata queries and viewers beyond this tutorial, [NCI Imaging Data Commons (IDC)](https://learn.canceridc.dev/) provides its own tools. The shared image plan retains IDC attribution when its metadata is used.
 
-Useful links: [TCIA Dataset Explorer](https://www.cancerimagingarchive.net/dataset-explorer/), [CMB-GEC](https://www.cancerimagingarchive.net/collection/cmb-gec/), [UCSF-PDGM](https://www.cancerimagingarchive.net/collection/ucsf-pdgm/), [UPENN-GBM](https://www.cancerimagingarchive.net/collection/upenn-gbm/), [HEAD-NECK-RADIOMICS-HN1](https://www.cancerimagingarchive.net/collection/head-neck-radiomics-hn1/), [controlled-access instructions](https://www.cancerimagingarchive.net/nih-controlled-data-access-policy/).''')
+Useful links: [TCIA Dataset Explorer](https://www.cancerimagingarchive.net/dataset-explorer/), [CMB-GEC](https://www.cancerimagingarchive.net/collection/cmb-gec/), [NSCLC-Radiomics](https://www.cancerimagingarchive.net/collection/nsclc-radiomics/), [controlled-access instructions](https://www.cancerimagingarchive.net/nih-controlled-data-access-policy/).''')
 
 notebook = nbf.v4.new_notebook(cells=cells, metadata={
     "kernelspec": {"display_name":"Python 3", "language":"python", "name":"python3"},
     "language_info": {"name":"python", "version":"3.11"},
-    "tcia_workshop": {"package_version":"4.0.0a16", "default_mode":"live_public_samples",
+    "tcia_workshop": {"package_version":"4.0.0a17", "default_mode":"live_public_samples",
         "payload_downloads_default":True, "public_sample_max_items":1,
         "controlled_downloads_default":False, "audience":"junior data scientists"}})
 for i, cell in enumerate(notebook.cells): cell.id = f"tcia-workshop-{i:02d}"

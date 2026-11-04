@@ -2,95 +2,58 @@
 
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/kirbyju/TCIA_Notebooks/blob/main/tcia_utils_v4/TCIA_Dataset_and_Participant_Queries.ipynb)
 
-The single guided workshop is written for junior data scientists. It covers
-CMB-GEC dataset discovery and downloads, combined CT/diagnosis/primary-site cohorts
-across CMB-LCA and NSCLC-Radiomics (with CMB-GEC as a site-filter comparison), public brain MR/NIfTI segmentation metadata, and controlled CT/SEG
-candidate selection. It explains public versus controlled access and DICOM versus
-other formats without requiring knowledge of the hosting infrastructure.
+This guided workshop is written for junior data scientists. It covers CMB-GEC
+dataset discovery and downloads; combined modality, diagnosis and primary-site
+cohorts across CMB-LCA and NSCLC-Radiomics; clinically selected CT and slide files;
+and an open-access NSCLC-Radiomics CT/DICOM SEG sample. Public versus controlled
+access and DICOM versus other formats are explained without requiring knowledge
+of the hosting infrastructure.
 
-The workshop installs tcia_utils 4.0.0a16 for Python 3.11+. In Colab, run the setup
-cell and restart the runtime when prompted. The hosted REST service must include
-query API 0.7.1+ with combined participant clinical filters, the shared participant
-image-planning route, public slide descriptors and list-valued attributes.
-This requires a source update and REST/MCP restart; no bundle rebuild is needed.
+The workshop installs tcia_utils 4.0.0a17 for Python 3.11+. Run the setup cell and
+restart the runtime if prompted. The existing query API 0.7.1 provides the needed
+metadata. This notebook update requires no server or artifact update.
 
-All supported image/file transfers now delegate to the pip-installed
-`tcia-data-retriever==0.1.0rc3`. It bundles the headless transfer executable;
-readers do not install Go, Node, a desktop application or another executable.
-The `downloads` extra installs it. Participant image planning uses the same TCIA
-service interface for public DICOM series and public non-DICOM files. The service
-reuses IDC's versioned metadata for public DICOM and retains provider attribution.
-No IDC package or separate provider query is required in the notebook. Advanced
-IDC-specific queries and viewers remain available through IDC's own tools.
-The tutorial setup installs both extras. Data Retriever owns transfer retries,
-checksums, output layout, skip-existing behavior and archive extraction.
+Downloads use pip-installed tcia-data-retriever 0.1.0rc3. The main notebook does
+not install or invoke Aspera. The separate
+[Aspera notebook](../TCIA_Aspera_CLI_Downloads.ipynb) contains the brain MR/NIfTI
+cohort and optional geometry lesson. It accepts saved participant cohorts and
+`packageUrl,packagePath` CSV files from tcia_utils or the Participant Explorer.
+Aspera installation and command invocation remain in that notebook.
 
-Read the TCIA data usage policy before running transfer cells. Those calls pass
-accept_data_policy=True explicitly. The three public sample cells run directly,
-each with max_items=1. These limits count whole series/files, not bytes. Controlled
-examples remain off until an approved reader supplies their own key and enables
-them. To expand a sample, keep the same destination and omit max_items; the
-transfer package can reuse existing files without resume=True. That option
-explicitly requests skip-existing checks, not partial-file byte-range resume.
-In RC3, verified existing files count as Skipped and completed. Synced identifies
-public DICOM sync jobs, which may transfer missing files. TDR streams plain progress lines into notebook output,
-even if SDK preparation messages are disabled.
+The four public sample cells run directly: three use max_items=1 and the CT/SEG
+sample uses max_items=2 to retain a scan series and a segmentation series. Limits
+count whole series/files, not bytes. Controlled CMB-GEC downloads remain off until
+an approved user supplies their own key. Rerun the same download call with the
+same destination to retry or expand a sample. TDR automatically checks existing
+files; the redundant resume argument has been removed. Accepted existing files
+count as Skipped and completed; Synced describes public DICOM sync jobs, which
+can fetch missing files. TDR owns retries, integrity checks, file layout and
+route-specific archive handling.
 
-Supplied CLI/Python controlled keys are used for that invocation only, without a
-saved credential copy or fallback to desktop GUI credentials.
-The metadata service and SDK reports do not contain keys, tokens or signed URLs.
-No real controlled-access transfer was used to validate this update.
-Standalone file-manifest downloads use the SDK's generic manifest collection
-label, and TDR preserves supplied archive filenames. This can differ from the
-public DICOM hierarchy. Direct/controlled ZIP files remain archives. Use known
-dataset context consistently if choosing download_dataset() instead.
+Current download categories, requirements, methods, counts, access and licenses
+remain visible. Unsupported external groups retain their official links. A
+successful supported-group download does not prove the full collection was
+acquired. Missing counts are not zero, and group counts may overlap. Metadata
+CSV creation is preparation, not proof of a successful transfer.
 
-External-only Aspera groups remain in the inventory with counts, published
-requirements and official links. Separate application notebooks cover them.
-Downloading supported groups is not proof of acquiring an entire collection.
-Download tables show published full-group subjects/studies/series/images; counts
-may overlap, and missing counts are not zero. Multi-value attributes remain lists.
-The format_table helper adds display-only missing labels without changing exports.
+Clinical filters are applied together before pagination. Matching is literal and
+case-insensitive. Recorded-only mode requires source evidence and false inference
+flags for both diagnosis and primary site. Derived clinical metadata support
+discovery; original dataset descriptions and linked source files remain the
+authoritative records. Participant identity remains dataset-scoped.
 
-Maintainer checks use tools/test_workshop.py and tools/run_tcia_workshop.py. The
-runner exercises the installed wheel with recorded public metadata. Its private
-validation copy uses dry_run=True and accept_data_policy=False for public sample
-calls; controlled examples remain off. Independent HTTP/subprocess guards block
-image transfers. Recorded metadata describe their captured snapshot and are not
-proof that a later deployment or source update is equivalent.
+The public CT/SEG example requires CT and SEG within the same participant and
+study. It does not prove the exact referenced source series, segment names or
+image/mask alignment. Readers must verify those details before analysis.
 
-Participant search applies modality, diagnosis and primary-site criteria together
-before pagination. Text matching is literal and case-insensitive. Recorded-only
-mode requires both selected clinical fields to have false inference flags and
-patient-level source evidence. Missing values cannot satisfy either text filter.
-The site is the clinical primary_site field, not the scanned body part. Full
-clinical exploration enriches only the matches. Query settings, separate inference
-flags and metadata snapshot remain with outputs.
-
-The fixture contains actual public metadata responses from the deployed 0.7.1
-API, recorded on 2026-11-03. The complete notebook passed against that deployment
-using the built 4.0.0a16 wheel with all imaging transfers blocked. The default
-combined search returned 322 records across CMB-LCA and NSCLC-Radiomics;
-recorded-only diagnosis/site evidence returned 5 CMB-LCA records.
-
-The clinically filtered cohort examples plan public CMB-LCA CT or slide files for
-exactly the selected participants. Coverage includes zero matches; unresolved
-routes stop execution. Public slide copies may have been reformatted and are not
-asserted equivalent to the submitter's originals. Indexed paths inside an archive
-are not invented standalone download URLs. Check exact scan/segmentation pairing
-and geometry before analysis.
-
-Use a fresh destination when moving from earlier download backends. The default
-workshop folder is now tcia-workshop-files. resume=True continues TDR-owned
-downloads; it does not import or migrate an earlier IDC/HTTP output tree.
-
-Controlled CT/SEG downloads distinguish the reported DICOM-series size from exact
-ZIP payload bytes. Server 0.7.1 supplies the size basis and published archive-size
-label; only exact manifest byte counts are used as payload-size assertions. SDK
-a15 also avoids asserting ambiguous controlled-inventory sizes when exact payload
-metadata is absent. Available checksum and response-length checks remain enabled.
-The metadata CSV is written during preparation and does not prove transfer success.
-
-This notebook uses the RC3 candidate containing the TDR PR #13 counter change.
-The TDR review remains open; this package preview supports testing before the
-team completes formal review. No new download option is required.
+Maintainer checks use tools/test_workshop.py, tools/test_aspera_cohort.py,
+tools/run_tcia_workshop.py and tools/run_aspera_cohort.py. The main validation copy
+turns the four public download calls into dry runs. The Aspera validation copy
+intercepts all transfer commands. Independent HTTP and subprocess guards prohibit
+imaging transfers. Both lessons passed against live public metadata and recorded
+fixtures with the installed SDK wheel. The metadata snapshot was
+be9e7f9cd4229cb581e0cab83988fde86fa2a7b6724be7b5e57cb75f4e5de637,
+observed on 2026-11-04. The Aspera example exported two of 70 indexed files for
+two participants. Ruby/Aspera installation and real Aspera payload transfer were
+not executed by these checks. Recorded fixtures establish their captured state,
+not the freshness of a later deployment.
