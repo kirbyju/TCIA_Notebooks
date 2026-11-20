@@ -9,11 +9,11 @@ and an open-access NSCLC-Radiomics CT/DICOM SEG sample. Public versus controlled
 access and DICOM versus other formats are explained without requiring knowledge
 of the hosting infrastructure.
 
-The workshop installs tcia_utils 4.0.0a17 for Python 3.11+. Run the setup cell and
+The workshop installs tcia_utils 4.0.0a18 for Python 3.11+. Run the setup cell and
 restart the runtime if prompted. The existing query API 0.7.1 provides the needed
 metadata. This notebook update requires no server or artifact update.
 
-Downloads use pip-installed tcia-data-retriever 0.1.0rc3. The main notebook does
+Downloads use pip-installed tcia-data-retriever 0.1.0rc4. The main notebook does
 not install or invoke Aspera. The separate
 [Aspera notebook](../TCIA_Aspera_CLI_Downloads.ipynb) contains the brain MR/NIfTI
 cohort and optional geometry lesson. It accepts saved participant cohorts and
@@ -26,8 +26,9 @@ count whole series/files, not bytes. Controlled CMB-GEC downloads remain off unt
 an approved user supplies their own key. Rerun the same download call with the
 same destination to retry or expand a sample. TDR automatically checks existing
 files; the redundant resume argument has been removed. Accepted existing files
-count as Skipped and completed; Synced describes public DICOM sync jobs, which
-can fetch missing files. TDR owns retries, integrity checks, file layout and
+count as completed work items, as do public DICOM synchronization jobs, which
+can fetch missing files. Schema 2 retains the wire field `downloaded` for this
+aggregate, displayed as Completed; this is not a count of new transfers. TDR owns retries, integrity checks, file layout and
 route-specific archive handling.
 
 Current download categories, requirements, methods, counts, access and licenses
