@@ -9,11 +9,11 @@ and an open-access NSCLC-Radiomics CT/DICOM SEG sample. Public versus controlled
 access and DICOM versus other formats are explained without requiring knowledge
 of the hosting infrastructure.
 
-The workshop installs tcia_utils 4.0.0a18 for Python 3.11+. Run the setup cell and
+The workshop installs tcia_utils 4.0.0a19 for Python 3.11+. Run the setup cell and
 restart the runtime if prompted. The existing query API 0.7.1 provides the needed
 metadata. This notebook update requires no server or artifact update.
 
-Downloads use pip-installed tcia-data-retriever 0.1.0rc4. The main notebook does
+Downloads use pip-installed tcia-data-retriever 0.1.0. The main notebook does
 not install or invoke Aspera. The separate
 [Aspera notebook](../TCIA_Aspera_CLI_Downloads.ipynb) contains the brain MR/NIfTI
 cohort and optional geometry lesson. It accepts saved participant cohorts and
